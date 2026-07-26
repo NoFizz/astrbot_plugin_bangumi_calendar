@@ -1,9 +1,43 @@
-# 缓存封面图
-covers/
-
 # Python
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
 
-# 开发文档（仅本地保留）
+# Virtual environments
+env/
+venv/
+.venv/
+
+# Testing
+.pytest_cache/
+tests/
+
+# Developer docs
 AGENTS.md
+docs/
+dev/
+
+# Environment
+.env
+
+# Node
+node_modules/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Runtime cache
+covers/
+
+# OS
+.DS_Store
+Thumbs.db
