@@ -1,0 +1,9 @@
+# 缓存封面图
+covers/
+
+# Python
+__pycache__/
+*.pyc
+
+# 开发文档（仅本地保留）
+AGENTS.md

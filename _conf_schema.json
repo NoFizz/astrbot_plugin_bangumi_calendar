@@ -1,0 +1,49 @@
+{
+  "umos": {
+    "description": "推送目标UMO列表",
+    "type": "list",
+    "hint": "填写完整UMO，格式: Bot名:GroupMessage:群号",
+    "obvious_hint": true,
+    "default": []
+  },
+  "push_time": {
+    "description": "每日推送时间",
+    "type": "string",
+    "hint": "以服务器时区为准，格式: H:MM 或 HH:MM，如 7:00、07:00",
+    "default": "07:00"
+  },
+  "max_items": {
+    "description": "每天最大推送番数",
+    "type": "int",
+    "hint": "限制每天推送的番剧数量，0为不限制",
+    "default": 0
+  },
+  "sort_by": {
+    "description": "排序依据",
+    "type": "string",
+    "hint": "选择番剧卡片的排序依据",
+    "options": ["score", "doing"],
+    "labels": ["按评分", "按在看人数"],
+    "default": "score"
+  },
+  "sort_order": {
+    "description": "排序方向",
+    "type": "string",
+    "hint": "降序为从高到低，升序为从低到高",
+    "options": ["desc", "asc"],
+    "labels": ["降序", "升序"],
+    "default": "desc"
+  },
+  "proxy": {
+    "description": "代理地址",
+    "type": "string",
+    "hint": "留空使用直连。支持 http 和 socks5，例如 http://127.0.0.1:7897 或 socks5://127.0.0.1:1080",
+    "default": ""
+  },
+  "max_retries": {
+    "description": "请求最大重试次数",
+    "type": "int",
+    "hint": "API 请求失败后的最大重试次数，最小为 1",
+    "default": 3
+  }
+}
