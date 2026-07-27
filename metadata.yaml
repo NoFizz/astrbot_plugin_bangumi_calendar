@@ -3,3 +3,5 @@ display_name: 新番日推
 desc: 每日新番放送日历，定时推送卡片图至群聊
 version: 1.0.0
 author: NoFizz
+repo: https://github.com/NoFizz/astrbot_plugin_bangumi_calendar
+astrbot_version: ">=4.26.0"
