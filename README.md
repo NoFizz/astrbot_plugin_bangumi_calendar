@@ -1,4 +1,4 @@
-# astrbot_plugin_bangumi_calendar
+<h1 align="center">新番日推/astrbot_plugin_bangumi_calendar</h1>
 
 <p align="center">
   <img src="logo.png" width="128" height="128" alt="astrbot_plugin_bangumi_calendar logo">
@@ -24,7 +24,16 @@
 
 ## 安装
 
-### 方法一：通过 AstrBot WebUI 安装（推荐）
+### 方法一：通过插件市场安装（推荐）
+
+1. 打开 AstrBot WebUI → 插件管理 → 插件市场。
+2. 添加插件源（如尚未添加）：
+   - 源名称：`AstrBot Official Plugin Market`
+   - 源地址：`https://cloud-test.astrbot.app/api/v1/market/plugins.json`
+3. 在插件市场中搜索 **新番日推**（`astrbot_plugin_bangumi_calendar`），点击安装。
+4. 等待安装完成，确认插件已启用。
+
+### 方法二：从 GitHub 安装
 
 1. 打开 AstrBot WebUI → 插件管理 → 新增插件。
 2. 选择 **从 GitHub 安装**。
@@ -34,7 +43,7 @@
    ```
 4. 等待安装完成，确认插件已启用。
 
-### 方法二：手动安装
+### 方法三：手动安装
 
 1. 将本仓库克隆或下载到 AstrBot 的插件目录：
    ```bash
