@@ -5,12 +5,17 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.0-blue" alt="version">
-  <img src="https://img.shields.io/badge/license-AGPL--3.0-green" alt="license">
-  <img src="https://img.shields.io/badge/AstrBot->=4.26.0-orange" alt="AstrBot version">
+  <img src="https://img.shields.io/badge/version-1.0.0-blue?style=flat" alt="version">
+  <img src="https://img.shields.io/badge/license-AGPL--3.0-green?style=flat" alt="license">
+  <img src="https://img.shields.io/badge/python-3.10+-blue?style=flat" alt="python">
+  <img src="https://img.shields.io/badge/AstrBot->=4.26.0-orange?style=flat" alt="AstrBot version">
 </p>
 
 每日定时推送 Bangumi 今日新番日历卡片图至群聊。
+
+<p align="center">
+  <img src="https://count.getloli.com/@astrbot_plugin_bangumi_calendar?theme=moebooru" alt="Moe Counter">
+</p>
 
 ## 功能特性
 
