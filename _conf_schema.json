@@ -21,9 +21,9 @@
   "sort_by": {
     "description": "排序依据",
     "type": "string",
-    "hint": "选择番剧卡片的排序依据",
+    "hint": "评分（Rank优先）：先按 Bangumi 全站排名高到低，未上榜的按评分高到低",
     "options": ["score", "doing"],
-    "labels": ["按评分", "按在看人数"],
+    "labels": ["评分（Rank优先）", "在看人数"],
     "default": "score"
   },
   "sort_order": {
@@ -45,5 +45,29 @@
     "type": "int",
     "hint": "API 请求失败后的最大重试次数，最小为 1",
     "default": 3
+  },
+  "enable_score_min": {
+    "description": "启用评分下限过滤",
+    "type": "bool",
+    "hint": "开启后，低于评分下限的番剧不显示",
+    "default": false
+  },
+  "score_min": {
+    "description": "评分下限",
+    "type": "float",
+    "hint": "评分低于此值的番剧不显示（需启用上方开关）",
+    "default": 0
+  },
+  "enable_doing_min": {
+    "description": "启用在看人数下限过滤",
+    "type": "bool",
+    "hint": "开启后，低于在看人数下限的番剧不显示",
+    "default": false
+  },
+  "doing_min": {
+    "description": "在看人数下限",
+    "type": "int",
+    "hint": "在看人数低于此值的番剧不显示（需启用上方开关）",
+    "default": 0
   }
 }

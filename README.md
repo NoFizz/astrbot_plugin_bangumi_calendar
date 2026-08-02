@@ -80,10 +80,14 @@
 | `umos` | list | `[]` | 推送目标 UMO 列表 |
 | `push_time` | string | `07:00` | 每日推送时间（H:MM 或 HH:MM，服务器时区） |
 | `max_items` | int | `0` | 每天最大推送番数，0 为不限制 |
-| `sort_by` | string | `score` | 排序依据（按评分 / 按在看人数） |
+| `sort_by` | string | `score` | 排序依据（评分（Rank优先）/ 在看人数） |
 | `sort_order` | string | `desc` | 排序方向（降序 / 升序） |
 | `proxy` | string | 空 | 代理地址，留空使用直连 |
 | `max_retries` | int | `3` | API 请求最大重试次数 |
+| `enable_score_min` | bool | `false` | 启用评分下限过滤 |
+| `score_min` | float | `0` | 评分下限（需启用上方开关） |
+| `enable_doing_min` | bool | `false` | 启用在看人数下限过滤 |
+| `doing_min` | int | `0` | 在看人数下限（需启用上方开关） |
 
 **UMO 格式**：`Bot名:GroupMessage:群号`，例如 `AstrBot:GroupMessage:123456789`
 
@@ -114,7 +118,7 @@
 - **渲染**：HTML + Jinja2 模板 → AstrBot 内置 `html_render`（Playwright）→ PNG 图片
 - **封面处理**：宿主机预下载封面并转 base64 data URI 嵌入 HTML，解决 Docker 内 Playwright 无法加载外部图片的问题
 - **网络**：所有 HTTP 请求使用 `httpx`，启用 `follow_redirects`，代理优先读取配置、回退到环境变量
-- **排序**：先对全部当日番剧按配置排序，再按 `max_items` 截断，确保"评分最高的 N 部"语义正确
+- **排序**：评分模式为 Rank 优先（先按 Bangumi 全站排名高到低，未上榜的按评分高到低）；在看人数模式按在看数排序。排序后可选按评分/在看人数下限过滤（开关各自生效，同时开启时须同时满足），最后按 `max_items` 截断
 - **容错**：API 请求可配置重试次数（默认 3 次，线性退避），渲染/推送失败静默降级并记录日志
 
 ## FAQ / 故障排查
