@@ -382,17 +382,18 @@ class TestRenderImage:
         ]
 
     @staticmethod
-    def _plugin(make_plugin, max_items=0):
+    def _plugin(make_plugin, max_items=0, **extra):
         """构造渲染路径上所有外部依赖均已打桩的插件。
 
         Args:
             make_plugin: conftest 提供的插件工厂。
             max_items: max_items 配置值。
+            **extra: 追加/覆盖的配置项（如过滤开关与下限）。
 
         Returns:
             BangumiCalendarPlugin: 已打桩的插件实例。
         """
-        plugin = make_plugin(max_items=max_items)
+        plugin = make_plugin(max_items=max_items, **extra)
         plugin._fetch_calendar = AsyncMock(
             return_value=[{"weekday": {"id": 1}, "items": TestRenderImage._sample_items()}]
         )
@@ -409,6 +410,15 @@ class TestRenderImage:
         assert url == "https://example.com/card.png"
         assert template_data["count"] == 2
         assert [item["name"] for item in template_data["items"]] == ["B", "C"]
+
+    def test_score_floor_filter_applied_before_truncation(self, make_plugin):
+        """Given 开启评分下限 6.0，When 渲染，Then 低于下限的番剧被过滤且 count 为过滤后数量。"""
+        plugin = self._plugin(make_plugin, max_items=3, enable_score_min=True, score_min=6.0)
+        url = asyncio.run(plugin._render_image())
+        template_data = plugin.html_render.call_args.args[1]
+        assert url == "https://example.com/card.png"
+        assert template_data["count"] == 1
+        assert [item["name"] for item in template_data["items"]] == ["B"]
 
     def test_no_today_items_returns_none(self, make_plugin):
         """Given 当日无番剧，When 渲染，Then 返回 None。"""

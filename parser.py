@@ -48,12 +48,30 @@ def parse_push_time(raw) -> tuple[int, int]:
         return 7, 0
 
 
+def _get_rank(item: dict) -> int:
+    """取条目全站排名，0/缺失视为未上榜。
+
+    Args:
+        item: 番剧条目。
+
+    Returns:
+        int: 排名（1 起）；无 rank 字段或值不大于 0 时返回 0（未上榜）。
+    """
+    rank = (item.get("rating") or {}).get("rank")
+    return rank if isinstance(rank, int) and rank > 0 else 0
+
+
 def sort_items(items: list[dict], sort_by: str, sort_order: str) -> list[dict]:
     """按指定字段与方向对番剧列表原地排序。
 
+    ``doing`` 按在看人数排序；其余值按评分模式做 Rank 优先排序：
+    有全站排名（rating.rank > 0）的条目在前，按排名升序（1 最前）；
+    未上榜的在后，按评分排。升序时对称反转：未上榜按评分升序在前，
+    有排名的按排名降序在后。
+
     Args:
         items: 番剧条目列表（原地修改后返回同一对象）。
-        sort_by: 排序字段，``doing`` 按在看数，其余按评分。
+        sort_by: 排序字段，``doing`` 按在看数，其余按评分（Rank 优先）。
         sort_order: 排序方向，非 ``asc`` 一律按降序处理。
 
     Returns:
@@ -62,9 +80,48 @@ def sort_items(items: list[dict], sort_by: str, sort_order: str) -> list[dict]:
     reverse = sort_order != "asc"
     if sort_by == "doing":
         items.sort(key=lambda a: (a.get("collection") or {}).get("doing", 0), reverse=reverse)
+        return items
+    ranked = [it for it in items if _get_rank(it) > 0]
+    unranked = [it for it in items if _get_rank(it) == 0]
+    if reverse:
+        ranked.sort(key=_get_rank)
+        unranked.sort(key=lambda a: (a.get("rating") or {}).get("score", 0), reverse=True)
     else:
-        items.sort(key=lambda a: (a.get("rating") or {}).get("score", 0), reverse=reverse)
+        unranked.sort(key=lambda a: (a.get("rating") or {}).get("score", 0))
+        ranked.sort(key=_get_rank, reverse=True)
+    # 降序：有排名在前；升序：未上榜在前（对称反转）
+    items[:] = (ranked + unranked) if reverse else (unranked + ranked)
     return items
+
+
+def filter_items_by_limits(
+    items: list[dict],
+    enable_score_min: bool,
+    score_min: float,
+    enable_doing_min: bool,
+    doing_min: int,
+) -> list[dict]:
+    """按评分/在看人数下限过滤番剧，返回过滤后的新列表。
+
+    开启的开关各自生效；两个都开启时条目须同时满足两个下限（AND）。
+    缺失的评分/在看人数按 0 参与比较（开启对应下限时会被过滤）。
+
+    Args:
+        items: 番剧条目列表。
+        enable_score_min: 是否启用评分下限过滤。
+        score_min: 评分下限（仅启用时生效）。
+        enable_doing_min: 是否启用在看人数下限过滤。
+        doing_min: 在看人数下限（仅启用时生效）。
+
+    Returns:
+        list[dict]: 过滤后的新列表；开关均关闭时内容与原列表一致。
+    """
+    result = list(items)
+    if enable_score_min:
+        result = [it for it in result if ((it.get("rating") or {}).get("score") or 0.0) >= score_min]
+    if enable_doing_min:
+        result = [it for it in result if ((it.get("collection") or {}).get("doing") or 0) >= doing_min]
+    return result
 
 
 def get_today_items(calendar: list[dict], today_weekday: int) -> list[dict]:

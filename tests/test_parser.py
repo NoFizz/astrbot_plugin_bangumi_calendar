@@ -14,7 +14,11 @@
 
 import pytest
 
-from astrbot_plugin_bangumi_calendar.parser import select_tags
+from astrbot_plugin_bangumi_calendar.parser import (
+    filter_items_by_limits,
+    select_tags,
+    sort_items,
+)
 
 # 实测 /v0/subjects/326 的 tags（name, count）：科幻2300、TV 1314、漫画改417、
 # 战斗229、日本188、漫改132
@@ -178,3 +182,221 @@ class TestSelectTagsEdge:
         """Given 条目缺 name/count 或类型异常，When 筛选，Then 跳过不崩溃。"""
         tags = [{"name": "TV", "count": "many"}, {"count": 100}, {"name": ""}, "junk", None]
         assert select_tags(tags) == []
+
+
+class TestSortItems:
+    """``sort_items``：评分模式 Rank 优先，在看模式按 doing。
+
+    排名字段 ``rating.rank``（int，1 起，0 或缺失=未上榜）。
+    评分模式：有 rank 的按排名升序在前（1 最前），未上榜的按评分排在后；
+    升序时对称反转（未上榜按评分升序在前，有 rank 的按排名降序在后）。
+    """
+
+    @staticmethod
+    def _item(name: str, rank=None, score=None, doing=None) -> dict:
+        """构造单条番剧：仅填充给定字段，便于控制缺失场景。
+
+        Args:
+            name: 番剧名（断言用标识）。
+            rank: 全站排名，None 表示不写该字段。
+            score: 评分，None 表示不写该字段。
+            doing: 在看人数，None 表示不写该字段。
+
+        Returns:
+            dict: 番剧条目。
+        """
+        item: dict = {"name": name}
+        if rank is not None or score is not None:
+            rating = {}
+            if rank is not None:
+                rating["rank"] = rank
+            if score is not None:
+                rating["score"] = score
+            item["rating"] = rating
+        if doing is not None:
+            item["collection"] = {"doing": doing}
+        return item
+
+    def test_mixed_desc_rank_first_then_score(self):
+        """Given 混合有/无 rank 的条目且 desc，When 排序，Then 有 rank 按 1,2,5 在前，未上榜按评分降序在后。"""
+        items = [
+            self._item("unranked-low", score=6.0),
+            self._item("rank-5", rank=5, score=9.0),
+            self._item("unranked-mid", score=7.5),
+            self._item("rank-2", rank=2, score=8.0),
+            self._item("rank-1", rank=1, score=9.5),
+            self._item("unranked-high", score=9.0),
+        ]
+        assert [it["name"] for it in sort_items(items, "score", "desc")] == [
+            "rank-1",
+            "rank-2",
+            "rank-5",
+            "unranked-high",
+            "unranked-mid",
+            "unranked-low",
+        ]
+
+    def test_mixed_desc_mutates_in_place_and_returns_same_list(self):
+        """Given 混合条目，When desc 排序，Then 原地修改并返回同一列表对象。"""
+        items = [self._item("a", rank=2, score=8.0), self._item("b", score=9.0)]
+        result = sort_items(items, "score", "desc")
+        assert result is items
+        assert [it["name"] for it in items] == ["a", "b"]
+
+    def test_all_unranked_desc_matches_legacy_score_order(self):
+        """Given 全部无 rank 且 desc，When 排序，Then 按评分降序（兼容旧行为）。"""
+        items = [
+            self._item("a", score=3.0),
+            self._item("b", score=9.5),
+            self._item("c", score=5.0),
+        ]
+        assert [it["name"] for it in sort_items(items, "score", "desc")] == ["b", "c", "a"]
+
+    def test_mixed_asc_symmetric_reverse(self):
+        """Given 混合有/无 rank 的条目且 asc，When 排序，Then 未上榜按评分升序在前，有 rank 按排名降序在后。"""
+        items = [
+            self._item("unranked-low", score=6.0),
+            self._item("rank-5", rank=5, score=9.0),
+            self._item("unranked-mid", score=7.5),
+            self._item("rank-2", rank=2, score=8.0),
+            self._item("rank-1", rank=1, score=9.5),
+            self._item("unranked-high", score=9.0),
+        ]
+        assert [it["name"] for it in sort_items(items, "score", "asc")] == [
+            "unranked-low",
+            "unranked-mid",
+            "unranked-high",
+            "rank-5",
+            "rank-2",
+            "rank-1",
+        ]
+
+    def test_all_unranked_asc_matches_legacy_score_order(self):
+        """Given 全部无 rank 且 asc，When 排序，Then 按评分升序（兼容旧行为）。"""
+        items = [
+            self._item("a", score=3.0),
+            self._item("b", score=9.5),
+            self._item("c", score=5.0),
+        ]
+        assert [it["name"] for it in sort_items(items, "score", "asc")] == ["a", "c", "b"]
+
+    def test_rank_zero_treated_as_unranked(self):
+        """Given rank=0 与 rank=3 混排且 desc，When 排序，Then rank=0 进未上榜组（按评分排在有 rank 之后）。"""
+        items = [
+            self._item("rank-zero", rank=0, score=9.9),
+            self._item("rank-3", rank=3, score=5.0),
+        ]
+        assert [it["name"] for it in sort_items(items, "score", "desc")] == ["rank-3", "rank-zero"]
+
+    def test_missing_rank_field_treated_as_unranked(self):
+        """Given 条目无 rank 字段，When desc 排序，Then 按评分参与未上榜组。"""
+        items = [
+            self._item("no-rating"),
+            self._item("ranked", rank=1, score=1.0),
+            self._item("scored", score=8.0),
+        ]
+        assert [it["name"] for it in sort_items(items, "score", "desc")] == [
+            "ranked",
+            "scored",
+            "no-rating",
+        ]
+
+    def test_doing_sort_ignores_rank(self):
+        """Given sort_by=doing 且条目带 rank，When 排序，Then 仅按在看人数排序，与旧行为一致。"""
+        items = [
+            self._item("a", rank=1, doing=10),
+            self._item("b", rank=2, doing=2),
+            self._item("c", rank=3, doing=30),
+        ]
+        assert [it["name"] for it in sort_items(items, "doing", "desc")] == ["c", "a", "b"]
+        assert [it["name"] for it in sort_items(items, "doing", "asc")] == ["b", "a", "c"]
+
+
+class TestFilterItemsByLimits:
+    """``filter_items_by_limits``：评分/在看人数下限过滤，双开关 AND。"""
+
+    @staticmethod
+    def _item(name: str, score=None, doing=None) -> dict:
+        """构造单条番剧：仅填充给定字段。
+
+        Args:
+            name: 番剧名（断言用标识）。
+            score: 评分，None 表示不写该字段。
+            doing: 在看人数，None 表示不写该字段。
+
+        Returns:
+            dict: 番剧条目。
+        """
+        item: dict = {"name": name}
+        if score is not None:
+            item["rating"] = {"score": score}
+        if doing is not None:
+            item["collection"] = {"doing": doing}
+        return item
+
+    def test_score_floor_keeps_boundary_value(self):
+        """Given 开启评分下限 5，When 过滤，Then score<5 过滤、score=5 保留。"""
+        items = [
+            self._item("low", score=3.0),
+            self._item("at-floor", score=5.0),
+            self._item("high", score=9.0),
+        ]
+        result = filter_items_by_limits(items, True, 5.0, False, 0)
+        assert [it["name"] for it in result] == ["at-floor", "high"]
+
+    def test_doing_floor(self):
+        """Given 开启在看人数下限 100，When 过滤，Then doing<100 过滤、doing=100 保留。"""
+        items = [
+            self._item("low", doing=50),
+            self._item("at-floor", doing=100),
+            self._item("high", doing=500),
+        ]
+        result = filter_items_by_limits(items, False, 0, True, 100)
+        assert [it["name"] for it in result] == ["at-floor", "high"]
+
+    def test_both_floors_require_and(self):
+        """Given 双开关开启，When 过滤，Then 需同时满足两个下限（AND）。"""
+        items = [
+            self._item("bad-score", score=4.0, doing=200),
+            self._item("bad-doing", score=6.0, doing=50),
+            self._item("good", score=6.0, doing=150),
+        ]
+        result = filter_items_by_limits(items, True, 5.0, True, 100)
+        assert [it["name"] for it in result] == ["good"]
+
+    def test_disabled_switch_ignores_floor(self):
+        """Given 开关关闭，When 过滤，Then 对应下限不生效。"""
+        items = [
+            self._item("low-score", score=1.0, doing=0),
+            self._item("high", score=9.0, doing=999),
+        ]
+        assert [it["name"] for it in filter_items_by_limits(items, False, 100.0, False, 1000)] == [
+            "low-score",
+            "high",
+        ]
+        # 仅开评分开关时，doing 下限 1000 不生效
+        result = filter_items_by_limits(items, True, 5.0, False, 1000)
+        assert [it["name"] for it in result] == ["high"]
+
+    def test_missing_score_treated_as_zero(self):
+        """Given 条目缺 rating/score 且开启评分下限，When 过滤，Then 缺失按 0 处理被过滤。"""
+        items = [
+            self._item("no-rating"),
+            self._item("scored", score=8.0),
+            self._item("doing-only", doing=300),
+        ]
+        result = filter_items_by_limits(items, True, 1.0, False, 0)
+        assert [it["name"] for it in result] == ["scored"]
+
+    def test_missing_doing_treated_as_zero(self):
+        """Given 条目缺 collection/doing 且开启在看下限，When 过滤，Then 缺失按 0 处理被过滤。"""
+        items = [
+            self._item("no-collection"),
+            self._item("with-doing", doing=300),
+        ]
+        result = filter_items_by_limits(items, False, 0, True, 100)
+        assert [it["name"] for it in result] == ["with-doing"]
+
+    def test_empty_list_returns_empty(self):
+        """Given 空列表，When 过滤，Then 返回空列表。"""
+        assert filter_items_by_limits([], True, 5.0, True, 100) == []

@@ -20,6 +20,7 @@ from .models import WEEKDAY_NAMES, _CACHE_EXPIRE_DAYS, _COVERS_DIR
 from .parser import (
     calculate_sleep_time,
     clean_umos,
+    filter_items_by_limits,
     get_proxy,
     get_today_items,
     parse_push_time,
@@ -99,6 +100,16 @@ class BangumiCalendarPlugin(Star):
             items,
             self.config.get("sort_by", "score"),
             self.config.get("sort_order", "desc"),
+        )
+
+    def _filter_items(self, items: list[dict]) -> list[dict]:
+        """根据配置的评分/在看人数下限过滤番剧列表（开关关闭时下限不生效）"""
+        return filter_items_by_limits(
+            items,
+            self.config.get("enable_score_min", False),
+            self.config.get("score_min", 0),
+            self.config.get("enable_doing_min", False),
+            self.config.get("doing_min", 0),
         )
 
     def _get_cache_path(self, anime_id) -> str:
@@ -354,6 +365,7 @@ class BangumiCalendarPlugin(Star):
             return None
 
         items = self._sort_items(items)
+        items = self._filter_items(items)
 
         max_items = self.config.get("max_items", 0)
         if max_items > 0:
