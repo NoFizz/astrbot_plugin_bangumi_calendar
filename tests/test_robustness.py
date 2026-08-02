@@ -229,3 +229,63 @@ class TestSafeAnimeId:
         assert os.path.dirname(path) == plugin_main._COVERS_DIR
         assert os.path.basename(path) == parser_mod.safe_anime_id("../evil") + ".jpg"
         assert ".." not in os.path.basename(path)
+
+
+class TestDownloadConcurrency:
+    """``download_covers`` 的并发限流：最大并发不超过 ``_DOWNLOAD_SEM_LIMIT``。"""
+
+    def test_max_concurrency_capped(self, monkeypatch, tmp_path):
+        """Given 12 个待下载条目且下载耗时，When 并发下载，Then 最大并发恰好等于限制值。"""
+        monkeypatch.setattr(service_mod, "_COVERS_DIR", str(tmp_path))
+        state = {"active": 0, "max": 0}
+
+        class FakeClient:
+            def __init__(self, **kwargs):
+                pass
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *exc):
+                return False
+
+            async def get(self, url, **kwargs):
+                state["active"] += 1
+                state["max"] = max(state["max"], state["active"])
+                await asyncio.sleep(0.02)
+                state["active"] -= 1
+                return _FakeResponse(content=b"\x00" * 200)
+
+        monkeypatch.setattr(service_mod.httpx, "AsyncClient", FakeClient)
+        items = [
+            {"id": i, "images": {"large": f"http://x/{i}.jpg"}} for i in range(12)
+        ]
+        result = asyncio.run(service_mod.download_covers(items, None))
+        assert len(result) == 12
+        assert state["max"] == 5  # 信号量将并发钳制在限制值
+
+
+class TestFileIOOffload:
+    """文件操作（缓存读/写/utime）必须通过 ``asyncio.to_thread`` 执行，避免阻塞事件循环。"""
+
+    def test_cache_io_goes_through_to_thread(self, monkeypatch, tmp_path):
+        """Given 同时有缓存命中与需要下载的条目，When 下载，Then 读写均走线程。"""
+        monkeypatch.setattr(service_mod, "_COVERS_DIR", str(tmp_path))
+        calls = []
+        real_to_thread = asyncio.to_thread
+
+        async def fake_to_thread(fn, *args):
+            calls.append(fn.__name__)
+            return await real_to_thread(fn, *args)
+
+        monkeypatch.setattr(asyncio, "to_thread", fake_to_thread)
+        png_bytes = b"\x89PNG\r\n\x1a\n" + b"\x00" * 50
+        Path(tmp_path, "1.png").write_bytes(png_bytes)
+        resp = _FakeResponse(content=b"\x00" * 200)
+        TestCoverCache._install_fake_client(monkeypatch, resp)
+        items = [TestCoverCache._item(1, "http://x/1.png"), TestCoverCache._item(2, "http://x/2.jpg")]
+        result = asyncio.run(service_mod.download_covers(items, None))
+        assert "http://x/1.png" in result  # 命中缓存
+        assert "http://x/2.jpg" in result  # 走下载
+        assert "_read_cached_cover" in calls
+        assert "_store_cached_cover" in calls

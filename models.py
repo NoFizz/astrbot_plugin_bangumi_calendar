@@ -14,3 +14,5 @@ WEEKDAY_NAMES = ["周一", "周二", "周三", "周四", "周五", "周六", "�
 # 以 models.py 自身所在目录（插件根）计算，保证路径仍指向插件根/covers
 _COVERS_DIR = os.path.join(os.path.dirname(__file__), "covers")
 _CACHE_EXPIRE_DAYS = 30
+# 封面并发下载的信号量上限，防止瞬时打满连接与磁盘 IO
+_DOWNLOAD_SEM_LIMIT = 5

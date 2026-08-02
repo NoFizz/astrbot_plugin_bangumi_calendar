@@ -12,7 +12,7 @@ import httpx
 
 from astrbot.api import logger
 
-from .models import BANGUMI_CALENDAR_URL, BANGUMI_HEADERS, _COVERS_DIR
+from .models import BANGUMI_CALENDAR_URL, BANGUMI_HEADERS, _COVERS_DIR, _DOWNLOAD_SEM_LIMIT
 from .parser import safe_anime_id
 
 # 缓存扩展名与 MIME 的映射：命中时按扩展名反查 MIME，写入时按 MIME 选扩展名
@@ -153,26 +153,29 @@ async def download_covers(items: list[dict], proxy: str | None) -> dict[str, str
         anime_id = item.get("id")
         images = item.get("images") or {}
         cover_url = images.get("large") or images.get("common") or images.get("medium")
-        if not cover_url or not anime_id:
+        if not cover_url or anime_id is None:
             continue
-        data_uri = _read_cached_cover(anime_id)
+        data_uri = await asyncio.to_thread(_read_cached_cover, anime_id)
         if data_uri is not None:
             result[cover_url] = data_uri
         else:
             need_download.append(item)
 
-    # 第二步：下载缺失的封面
+    # 第二步：下载缺失的封面（并发受信号量限制）
     if need_download:
+        sem = asyncio.Semaphore(_DOWNLOAD_SEM_LIMIT)
 
         async def _fetch(client: httpx.AsyncClient, item: dict):
             anime_id = item.get("id")
             images = item.get("images") or {}
             url = images.get("large") or images.get("common") or images.get("medium")
             try:
-                resp = await client.get(url, timeout=10)
-                if resp.status_code == 200 and len(resp.content) > 100:
-                    ct = resp.headers.get("content-type", "image/jpeg").split(";")[0].strip()
-                    return url, _store_cached_cover(anime_id, resp.content, ct)
+                async with sem:
+                    resp = await client.get(url, timeout=10)
+                    if resp.status_code == 200 and len(resp.content) > 100:
+                        ct = resp.headers.get("content-type", "image/jpeg").split(";")[0].strip()
+                        data_uri = await asyncio.to_thread(_store_cached_cover, anime_id, resp.content, ct)
+                        return url, data_uri
             except Exception as e:
                 logger.warning(f"[Bangumi日历] 下载封面失败 {url}: {e}")
             return url, None
