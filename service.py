@@ -13,18 +13,96 @@ import httpx
 from astrbot.api import logger
 
 from .models import BANGUMI_CALENDAR_URL, BANGUMI_HEADERS, _COVERS_DIR
+from .parser import safe_anime_id
+
+# 缓存扩展名与 MIME 的映射：命中时按扩展名反查 MIME，写入时按 MIME 选扩展名
+_MIME_BY_EXT = {".jpg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
+_EXT_BY_MIME = {mime: ext for ext, mime in _MIME_BY_EXT.items()}
 
 
-def _cache_path(anime_id: int) -> str:
+def _cache_path(anime_id, ext: str = ".jpg") -> str:
     """封面缓存文件路径。
+
+    Args:
+        anime_id: Bangumi 条目 ID（任意类型，写入前安全化）。
+        ext: 文件扩展名，``""`` 表示无扩展名的旧式缓存文件。
+
+    Returns:
+        str: covers 目录下的缓存路径。
+    """
+    return os.path.join(_COVERS_DIR, f"{safe_anime_id(anime_id)}{ext}")
+
+
+def _load_cover_file(path: str, mime: str) -> str:
+    """读取缓存文件并转为 data URI；文件损坏时抛出 OSError/ValueError。
+
+    Args:
+        path: 缓存文件路径。
+        mime: data URI 的 MIME 类型。
+
+    Returns:
+        str: ``data:{mime};base64,...``。
+    """
+    with open(path, "rb") as f:
+        b64 = base64.b64encode(f.read()).decode()
+    os.utime(path)
+    return f"data:{mime};base64,{b64}"
+
+
+def _read_cached_cover(anime_id) -> str | None:
+    """读取缓存封面为 data URI；缺失或损坏返回 None（损坏文件会被删除）。
 
     Args:
         anime_id: Bangumi 条目 ID。
 
     Returns:
-        str: covers 目录下的 jpg 缓存路径。
+        str | None: data URI；未命中或文件损坏时返回 None。
     """
-    return os.path.join(_COVERS_DIR, f"{anime_id}.jpg")
+    candidates = [(ext, mime) for ext, mime in _MIME_BY_EXT.items()]
+    candidates.append(("", "image/jpeg"))  # 无扩展名的旧式缓存按 jpeg 处理
+    for ext, mime in candidates:
+        path = _cache_path(anime_id, ext)
+        if os.path.isfile(path):
+            try:
+                return _load_cover_file(path, mime)
+            except (OSError, ValueError):
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
+                return None
+    return None
+
+
+def _store_cached_cover(anime_id, content: bytes, content_type: str) -> str:
+    """原子写入缓存封面并返回 data URI；写入失败时清理临时文件并重抛。
+
+    Args:
+        anime_id: Bangumi 条目 ID。
+        content: 图片字节。
+        content_type: 响应 content-type（可能带 ``; charset=...`` 后缀）。
+
+    Returns:
+        str: ``data:{mime};base64,...``。
+
+    Raises:
+        OSError: 写入或原子替换失败。
+    """
+    mime = content_type.split(";")[0].strip()
+    ext = _EXT_BY_MIME.get(mime, ".jpg")
+    final_path = _cache_path(anime_id, ext)
+    tmp_path = f"{final_path}.tmp"
+    try:
+        with open(tmp_path, "wb") as f:
+            f.write(content)
+        os.replace(tmp_path, final_path)
+    except OSError:
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
+        raise
+    return f"data:{mime};base64,{base64.b64encode(content).decode()}"
 
 
 async def fetch_calendar(config_retries: int, proxy: str | None) -> list | None:
@@ -77,12 +155,9 @@ async def download_covers(items: list[dict], proxy: str | None) -> dict[str, str
         cover_url = images.get("large") or images.get("common") or images.get("medium")
         if not cover_url or not anime_id:
             continue
-        cache_path = _cache_path(anime_id)
-        if os.path.isfile(cache_path):
-            os.utime(cache_path)
-            with open(cache_path, "rb") as f:
-                b64 = base64.b64encode(f.read()).decode()
-            result[cover_url] = f"data:image/jpeg;base64,{b64}"
+        data_uri = _read_cached_cover(anime_id)
+        if data_uri is not None:
+            result[cover_url] = data_uri
         else:
             need_download.append(item)
 
@@ -96,12 +171,8 @@ async def download_covers(items: list[dict], proxy: str | None) -> dict[str, str
             try:
                 resp = await client.get(url, timeout=10)
                 if resp.status_code == 200 and len(resp.content) > 100:
-                    # 保存到本地缓存
-                    with open(_cache_path(anime_id), "wb") as f:
-                        f.write(resp.content)
                     ct = resp.headers.get("content-type", "image/jpeg").split(";")[0].strip()
-                    b64 = base64.b64encode(resp.content).decode()
-                    return url, f"data:{ct};base64,{b64}"
+                    return url, _store_cached_cover(anime_id, resp.content, ct)
             except Exception as e:
                 logger.warning(f"[Bangumi日历] 下载封面失败 {url}: {e}")
             return url, None

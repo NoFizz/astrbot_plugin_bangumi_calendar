@@ -4,9 +4,25 @@
 """
 
 import datetime
+import hashlib
 import os
 
 from astrbot.api import logger
+
+
+def safe_anime_id(raw) -> str:
+    """把任意输入规范化为安全的缓存文件名片段。
+
+    Args:
+        raw: 原始 anime_id（通常为 int，但配置/API 数据不可信）。
+
+    Returns:
+        str: 合法整数转为十进制字符串；否则取 SHA1 摘要前 12 位十六进制。
+    """
+    try:
+        return str(int(raw))
+    except (TypeError, ValueError):
+        return hashlib.sha1(str(raw).encode()).hexdigest()[:12]
 
 
 def parse_push_time(raw) -> tuple[int, int]:

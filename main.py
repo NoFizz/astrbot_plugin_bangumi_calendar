@@ -19,6 +19,7 @@ from .parser import (
     get_proxy,
     get_today_items,
     parse_push_time,
+    safe_anime_id,
     sort_items,
 )
 from .service import cleanup_old_covers, download_covers, fetch_calendar
@@ -63,8 +64,16 @@ class BangumiCalendarPlugin(Star):
             self.config.get("sort_order", "desc"),
         )
 
-    def _get_cache_path(self, anime_id: int) -> str:
-        return os.path.join(_COVERS_DIR, f"{anime_id}.jpg")
+    def _get_cache_path(self, anime_id) -> str:
+        """计算封面缓存文件路径。
+
+        Args:
+            anime_id: Bangumi 条目 ID（任意类型，安全化后拼接）。
+
+        Returns:
+            str: covers 目录下的 jpg 缓存路径。
+        """
+        return os.path.join(_COVERS_DIR, f"{safe_anime_id(anime_id)}.jpg")
 
     def _cleanup_old_covers(self):
         """删除超过30天未使用的缓存封面"""
