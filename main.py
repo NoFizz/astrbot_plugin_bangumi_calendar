@@ -60,7 +60,7 @@ _REPLY_EN = {
     "astrbot_plugin_bangumi_calendar",
     "NoFizz",
     "每日新番放送日历，定时推送卡片图至群聊",
-    "1.0.0",
+    "1.1.0",
 )
 class BangumiCalendarPlugin(Star):
     """Bangumi 新番日历定时推送插件"""

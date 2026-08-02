@@ -10,7 +10,7 @@ import os
 
 BANGUMI_CALENDAR_URL = "https://api.bgm.tv/calendar"
 BANGUMI_HEADERS = {
-    "User-Agent": "astrbot_plugin_bangumi_calendar/1.0.0 (https://github.com/AstrBotDevs/AstrBot)",
+    "User-Agent": "astrbot_plugin_bangumi_calendar/1.1.0 (https://github.com/AstrBotDevs/AstrBot)",
     "Accept": "application/json",
 }
 WEEKDAY_NAMES = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
