@@ -4,3 +4,7 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 120
 target-version = "py310"
+
+[tool.ruff.format]
+# HTML_TMPL 等模板字面量须原样保留，禁止格式器改写引号
+quote-style = "preserve"
