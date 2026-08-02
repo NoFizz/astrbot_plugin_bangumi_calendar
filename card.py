@@ -74,10 +74,6 @@ HTML_TMPL = '''
       border-radius: 24px;
       box-shadow: 0 4px 12px rgba(251, 114, 153, 0.28);
     }
-    .header::after {
-      content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px;
-      background: linear-gradient(90deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.4));
-    }
     .header h1 {
       font-family: var(--font); font-size: 34px; font-weight: 700;
       color: var(--on-accent); letter-spacing: -0.01em; line-height: 1.2;
