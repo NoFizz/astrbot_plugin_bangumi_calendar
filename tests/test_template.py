@@ -203,7 +203,7 @@ class TestContract:
 
 
 class TestFooter:
-    """页脚：数据来源 + Presented by NoFizz 作者署名。"""
+    """页脚：数据来源 + Presented by NoFizz 作者署名（Birthstone 手写体）。"""
 
     def test_footer_has_data_source_and_credit(self):
         """Given 模板源码，Then 页脚含数据来源与 Presented by NoFizz 署名。"""
@@ -211,6 +211,12 @@ class TestFooter:
 
         assert "数据来源: Bangumi · bangumi.tv" in html
         assert '<div class="credit">Presented by NoFizz</div>' in html
+
+    def test_credit_uses_birthstone_embedded_font(self):
+        """Given HTML_TMPL 源码，Then 署名行使用 Birthstone 字体且字体已内嵌 base64。"""
+        assert "font-family: \"Birthstone\"" in HTML_TMPL
+        assert "data:font/woff2;base64," in HTML_TMPL
+        assert 'font-family: "Birthstone"' in HTML_TMPL
 
 
 class TestTagsRow:
