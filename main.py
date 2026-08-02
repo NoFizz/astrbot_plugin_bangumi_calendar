@@ -429,7 +429,7 @@ class BangumiCalendarPlugin(Star):
                 "timeout": 60000,
                 "viewport_width": 760,
                 "viewport_height": 800,
-                "device_scale_factor_level": "high",
+                "device_scale_factor_level": "ultra",
             }
             # html_render 依赖 AstrBot 的浏览器服务，可能瞬时失败；最多重试 3 次（间隔 1s）
             for attempt in range(3):

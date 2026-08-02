@@ -45,6 +45,8 @@ HTML_TMPL = '''
       --shadow-hover: 0 3px 6px rgba(0, 0, 0, 0.12); /* 浮层投影 */
       /* 全插件统一微软雅黑（用户指定），回退到系统无衬线字体 */
       --font: "Microsoft YaHei", "微软雅黑", "PingFang SC", "Noto Sans SC", sans-serif;
+      /* 新宋体：标题与序号专用（用户指定），回退到宋体系列 */
+      --font-song: "NSimSun", "新宋体", SimSun, "宋体", serif;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -68,7 +70,7 @@ HTML_TMPL = '''
       background: linear-gradient(90deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.4));
     }
     .header h1 {
-      font-family: var(--font); font-size: 34px; font-weight: 700;
+      font-family: var(--font-song); font-size: 34px; font-weight: 700;
       color: var(--on-accent); letter-spacing: -0.01em; line-height: 1.2;
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
     }
@@ -131,14 +133,14 @@ HTML_TMPL = '''
     .anime-card .meta .score { color: var(--accent); font-weight: 700; font-size: 22px; }
     .anime-card .meta .doing { color: var(--primary); font-weight: 700; }
 
-    /* 序号区（左栏）：88px 定宽，浅灰底，右侧浅灰分隔线，品牌粉大号数字垂直居中 */
+    /* 序号区（左栏）：64px 定宽，白底与信息区一致，右侧浅灰分隔线，新宋体品牌粉大号数字垂直居中 */
     .anime-card .index-col {
-      width: 88px; flex-shrink: 0;
+      width: 64px; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
-      background: var(--subtle); border-right: 1px solid var(--card-border);
+      background: var(--card-bg); border-right: 1px solid var(--card-border);
     }
     .anime-card .index-num {
-      font-family: var(--font); font-size: 40px; font-weight: 700;
+      font-family: var(--font-song); font-size: 48px; font-weight: 700;
       color: var(--accent); line-height: 1;
     }
     /* tag 行：flex 可换行，浅粉底胶囊徽章（品牌粉系，与评分强调一致） */
@@ -155,6 +157,10 @@ HTML_TMPL = '''
       text-align: center; padding: 16px 24px 20px;
       font-size: 13px; color: var(--text-muted);
       background: var(--card-bg); border-top: 1px solid var(--card-border);
+    }
+    /* 作者署名：数据来源下方，居中 */
+    .footer .credit {
+      margin-top: 6px; font-size: 12px; color: var(--text-muted);
     }
   </style>
 </head>
@@ -200,7 +206,10 @@ HTML_TMPL = '''
       </div>
       {% endfor %}
     </div>
-    <div class="footer">数据来源: Bangumi · bangumi.tv</div>
+    <div class="footer">
+      数据来源: Bangumi · bangumi.tv
+      <div class="credit">NoFizz</div>
+    </div>
   </div>
 </body>
 </html>
