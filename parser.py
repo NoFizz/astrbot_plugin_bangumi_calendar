@@ -113,12 +113,13 @@ def get_proxy(proxy_config) -> str | None:
 
 
 def clean_umos(raw) -> list[str]:
-    """清洗推送目标 UMO 列表：去空白、过滤空串。
+    """清洗推送目标 UMO 列表：去空白、过滤空串、保持顺序去重。
 
     Args:
         raw: 配置项 umos 的原始值（可迭代）。
 
     Returns:
-        list[str]: 清洗后的目标列表，不去重。
+        list[str]: 清洗后的目标列表（按首次出现顺序去重）。
     """
-    return [str(u).strip() for u in raw if str(u).strip()]
+    cleaned = [str(u).strip() for u in raw if str(u).strip()]
+    return list(dict.fromkeys(cleaned))

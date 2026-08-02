@@ -362,3 +362,17 @@ class TestAsyncClientReuse:
         )
         assert asyncio.run(service_mod.fetch_calendar(5, None)) is None
         assert _ErrorClient.instances == 1
+
+
+class TestCleanUmosDedup:
+    """``clean_umos`` 保持顺序去重，避免同一目标被重复推送。"""
+
+    def test_deduplicates_keeping_order(self, make_plugin):
+        """Given 含重复项的目标列表，When 清洗，Then 按首次出现顺序去重。"""
+        plugin = make_plugin(umos=["a", "b", "a", "c", "b"])
+        assert plugin._get_target_umos() == ["a", "b", "c"]
+
+    def test_dedup_after_strip(self, make_plugin):
+        """Given 重复项仅空白不同，When 清洗，Then 去空白后视为同一目标。"""
+        plugin = make_plugin(umos=["a", " a ", "a"])
+        assert plugin._get_target_umos() == ["a"]

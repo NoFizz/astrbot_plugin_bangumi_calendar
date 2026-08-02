@@ -240,7 +240,7 @@ class TestGetProxy:
 
 
 class TestGetTargetUmos:
-    """``_get_target_umos``：清洗空串/空白；按实际实现不去重。"""
+    """``_get_target_umos``：清洗空串/空白；保持顺序去重。"""
 
     def test_cleans_whitespace_and_filters_empties(self, make_plugin):
         """Given 含空白/空串的脏输入，When 清洗，Then 保留去空白后的非空项。"""
@@ -252,10 +252,13 @@ class TestGetTargetUmos:
             "Bot2:GroupMessage:222",
         ]
 
-    def test_keeps_duplicates(self, make_plugin):
-        """Given 含重复项，When 清洗，Then 重复项保留（实际行为：不去重）。"""
+    def test_deduplicates_keeping_order(self, make_plugin):
+        """Given 含重复项，When 清洗，Then 重复项按首次出现顺序去重。
+
+        （原实现保留重复会向同一群连发多条相同卡片，改为顺序去重。）
+        """
         plugin = make_plugin(umos=["a", "a", "a"])
-        assert plugin._get_target_umos() == ["a", "a", "a"]
+        assert plugin._get_target_umos() == ["a"]
 
     def test_missing_config_returns_empty(self, make_plugin):
         """Given 配置无 umos，When 清洗，Then 返回空列表。"""
