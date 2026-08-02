@@ -1,1 +1,1 @@
-httpx[socks]
+httpx[socks]>=0.26

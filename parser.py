@@ -3,6 +3,9 @@
 这些函数接收显式参数，由 main.py 的实例方法读取配置后调用。
 """
 
+# Copyright 2026 NoFizz
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 import datetime
 import hashlib
 import os
@@ -45,7 +48,7 @@ def parse_push_time(raw) -> tuple[int, int]:
         return 7, 0
 
 
-def sort_items(items: list, sort_by: str, sort_order: str) -> list:
+def sort_items(items: list[dict], sort_by: str, sort_order: str) -> list[dict]:
     """按指定字段与方向对番剧列表原地排序。
 
     Args:
@@ -54,7 +57,7 @@ def sort_items(items: list, sort_by: str, sort_order: str) -> list:
         sort_order: 排序方向，非 ``asc`` 一律按降序处理。
 
     Returns:
-        list: 排序后的原列表对象。
+        list[dict]: 排序后的原列表对象。
     """
     reverse = sort_order != "asc"
     if sort_by == "doing":
@@ -64,7 +67,7 @@ def sort_items(items: list, sort_by: str, sort_order: str) -> list:
     return items
 
 
-def get_today_items(calendar: list, today_weekday: int) -> list:
+def get_today_items(calendar: list[dict], today_weekday: int) -> list[dict]:
     """从日历数据中提取指定星期（ISO 编号）的番剧条目。
 
     Args:
@@ -72,7 +75,7 @@ def get_today_items(calendar: list, today_weekday: int) -> list:
         today_weekday: 今天 isoweekday()，1=周一，7=周日。
 
     Returns:
-        list: 当日条目；未匹配到时返回空列表。
+        list[dict]: 当日条目；未匹配到时返回空列表。
     """
     for day in calendar:
         if day.get("weekday", {}).get("id") == today_weekday:

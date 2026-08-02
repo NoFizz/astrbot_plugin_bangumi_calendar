@@ -3,6 +3,9 @@
 依赖 models 的常量；无 astrbot 依赖（仅 logger 用于日志）。
 """
 
+# Copyright 2026 NoFizz
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 import asyncio
 import base64
 import json
@@ -124,9 +127,7 @@ async def fetch_calendar(config_retries: int, proxy: str | None) -> list[dict] |
     if max_retries < 1:
         max_retries = 1
     # AsyncClient 在重试循环外创建一次，循环内复用同一连接池
-    async with httpx.AsyncClient(
-        headers=BANGUMI_HEADERS, timeout=20, follow_redirects=True, proxy=proxy
-    ) as client:
+    async with httpx.AsyncClient(headers=BANGUMI_HEADERS, timeout=20, follow_redirects=True, proxy=proxy) as client:
         for attempt in range(max_retries):
             try:
                 resp = await client.get(BANGUMI_CALENDAR_URL)

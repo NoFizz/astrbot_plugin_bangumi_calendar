@@ -35,9 +35,7 @@ class TestRenderRetry:
             BangumiCalendarPlugin: 已打桩的插件实例。
         """
         plugin = make_plugin(max_items=0)
-        plugin._fetch_calendar = AsyncMock(
-            return_value=[{"weekday": {"id": 1}, "items": [{"id": 1, "name": "A"}]}]
-        )
+        plugin._fetch_calendar = AsyncMock(return_value=[{"weekday": {"id": 1}, "items": [{"id": 1, "name": "A"}]}])
         plugin._get_today_items = lambda calendar: calendar[0]["items"]
         plugin._download_covers = AsyncMock(return_value={})
         plugin.html_render = AsyncMock(side_effect=side_effect)
@@ -47,9 +45,7 @@ class TestRenderRetry:
         """Given html_render 首次抛异常第二次成功，When 渲染，Then 重试后返回 URL。"""
         plugin = self._plugin(make_plugin, [RuntimeError("boom"), "https://example.com/card.png"])
         sleeps = []
-        monkeypatch.setattr(
-            plugin_main.asyncio, "sleep", AsyncMock(side_effect=lambda s: sleeps.append(s))
-        )
+        monkeypatch.setattr(plugin_main.asyncio, "sleep", AsyncMock(side_effect=lambda s: sleeps.append(s)))
         url = asyncio.run(plugin._render_image())
         assert url == "https://example.com/card.png"
         assert plugin.html_render.call_count == 2
@@ -257,9 +253,7 @@ class TestDownloadConcurrency:
                 return _FakeResponse(content=b"\x00" * 200)
 
         monkeypatch.setattr(service_mod.httpx, "AsyncClient", FakeClient)
-        items = [
-            {"id": i, "images": {"large": f"http://x/{i}.jpg"}} for i in range(12)
-        ]
+        items = [{"id": i, "images": {"large": f"http://x/{i}.jpg"}} for i in range(12)]
         result = asyncio.run(service_mod.download_covers(items, None))
         assert len(result) == 12
         assert state["max"] == 5  # 信号量将并发钳制在限制值
@@ -327,20 +321,14 @@ class TestFetchCalendarNarrow:
     def test_connect_error_retries_then_none(self, monkeypatch):
         """Given 每次请求抛 httpx.ConnectError 且 retries=3，When 抓取，Then 重试耗尽返回 None。"""
         sleeps = []
-        monkeypatch.setattr(
-            asyncio, "sleep", AsyncMock(side_effect=lambda s: sleeps.append(s))
-        )
-        monkeypatch.setattr(
-            service_mod.httpx, "AsyncClient", lambda **kw: _ErrorClient(httpx.ConnectError("refused"))
-        )
+        monkeypatch.setattr(asyncio, "sleep", AsyncMock(side_effect=lambda s: sleeps.append(s)))
+        monkeypatch.setattr(service_mod.httpx, "AsyncClient", lambda **kw: _ErrorClient(httpx.ConnectError("refused")))
         assert asyncio.run(service_mod.fetch_calendar(3, None)) is None
         assert sleeps == [3, 6]
 
     def test_runtime_error_propagates(self, monkeypatch):
         """Given 请求抛 RuntimeError，When 抓取，Then 异常直接传播（pytest.raises）。"""
-        monkeypatch.setattr(
-            service_mod.httpx, "AsyncClient", lambda **kw: _ErrorClient(RuntimeError("boom"))
-        )
+        monkeypatch.setattr(service_mod.httpx, "AsyncClient", lambda **kw: _ErrorClient(RuntimeError("boom")))
         with pytest.raises(RuntimeError):
             asyncio.run(service_mod.fetch_calendar(2, None))
 
@@ -357,9 +345,7 @@ class TestAsyncClientReuse:
     def test_client_instantiated_once_across_retries(self, monkeypatch):
         """Given 多次重试，When 抓取，Then AsyncClient 只实例化一次。"""
         monkeypatch.setattr(asyncio, "sleep", AsyncMock())
-        monkeypatch.setattr(
-            service_mod.httpx, "AsyncClient", lambda **kw: _ErrorClient(httpx.ConnectError("refused"))
-        )
+        monkeypatch.setattr(service_mod.httpx, "AsyncClient", lambda **kw: _ErrorClient(httpx.ConnectError("refused")))
         assert asyncio.run(service_mod.fetch_calendar(5, None)) is None
         assert _ErrorClient.instances == 1
 

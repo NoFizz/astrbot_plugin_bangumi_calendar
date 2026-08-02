@@ -1,5 +1,8 @@
 """HTML 卡片模板常量：Jinja2 语法，由 AstrBot 的 html_render 渲染为图片。"""
 
+# Copyright 2026 NoFizz
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 HTML_TMPL = '''
 <!DOCTYPE html>
 <html lang="zh-CN">

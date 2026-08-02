@@ -147,10 +147,7 @@ class TestGetTodayItems:
             tuple[list, int]: (日历, 今天的 isoweekday)。
         """
         today = datetime.datetime.now().isoweekday()
-        calendar = [
-            {"weekday": {"id": day_id}, "items": [{"name": f"day-{day_id}"}]}
-            for day_id in range(1, 8)
-        ]
+        calendar = [{"weekday": {"id": day_id}, "items": [{"name": f"day-{day_id}"}]} for day_id in range(1, 8)]
         return calendar, today
 
     def test_matches_today_weekday(self, make_plugin):
@@ -244,9 +241,7 @@ class TestGetTargetUmos:
 
     def test_cleans_whitespace_and_filters_empties(self, make_plugin):
         """Given 含空白/空串的脏输入，When 清洗，Then 保留去空白后的非空项。"""
-        plugin = make_plugin(
-            umos=[" Bot1:GroupMessage:111 ", "", "   ", "Bot2:GroupMessage:222"]
-        )
+        plugin = make_plugin(umos=[" Bot1:GroupMessage:111 ", "", "   ", "Bot2:GroupMessage:222"])
         assert plugin._get_target_umos() == [
             "Bot1:GroupMessage:111",
             "Bot2:GroupMessage:222",
@@ -285,11 +280,7 @@ class TestBuildStatusText:
         plugin = self._plugin(make_plugin, push_time="07:00", umos=["a", "b"])
         plugin._get_proxy = lambda: "http://127.0.0.1:7890"
         assert plugin._build_status_text() == (
-            "Bangumi新番日历插件\n"
-            "推送时间: 07:00\n"
-            "目标数: 2\n"
-            "代理: http://127.0.0.1:7890\n"
-            "距离下次推送: 1小时0分钟"
+            "Bangumi新番日历插件\n推送时间: 07:00\n目标数: 2\n代理: http://127.0.0.1:7890\n距离下次推送: 1小时0分钟"
         )
 
     def test_no_proxy_shows_direct_connection(self, make_plugin):
@@ -297,11 +288,7 @@ class TestBuildStatusText:
         plugin = self._plugin(make_plugin, push_time="07:00")
         plugin._get_proxy = lambda: None
         assert plugin._build_status_text() == (
-            "Bangumi新番日历插件\n"
-            "推送时间: 07:00\n"
-            "目标数: 0\n"
-            "代理: 直连\n"
-            "距离下次推送: 1小时0分钟"
+            "Bangumi新番日历插件\n推送时间: 07:00\n目标数: 0\n代理: 直连\n距离下次推送: 1小时0分钟"
         )
 
 
@@ -426,9 +413,7 @@ class TestRenderImage:
     def test_no_today_items_returns_none(self, make_plugin):
         """Given 当日无番剧，When 渲染，Then 返回 None。"""
         plugin = make_plugin()
-        plugin._fetch_calendar = AsyncMock(
-            return_value=[{"weekday": {"id": 1}, "items": []}]
-        )
+        plugin._fetch_calendar = AsyncMock(return_value=[{"weekday": {"id": 1}, "items": []}])
         assert asyncio.run(plugin._render_image()) is None
 
     def test_empty_calendar_returns_none(self, make_plugin):

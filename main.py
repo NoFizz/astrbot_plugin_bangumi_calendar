@@ -1,3 +1,6 @@
+# Copyright 2026 NoFizz
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 import asyncio
 import datetime
 import html as html_mod
@@ -37,10 +40,17 @@ class BangumiCalendarPlugin(Star):
     """Bangumi 新番日历定时推送插件"""
 
     def __init__(self, context: Context, config: AstrBotConfig):
+        """初始化插件：创建封面目录、启动时清理过期缓存、启动每日定时任务。
+
+        Args:
+            context: AstrBot 插件上下文。
+            config: 插件配置（AstrBot 自动注入）。
+        """
         super().__init__(context)
         self.config = config
         os.makedirs(_COVERS_DIR, exist_ok=True)
         self._cleanup_old_covers()
+        # 依赖插件加载时宿主的事件循环已在运行：create_task 必须在运行中的循环内调用
         self._monitoring_task = asyncio.create_task(self._daily_task())
         logger.info(f"[Bangumi日历] 插件已加载, 推送时间: {self.config.get('push_time', '07:00')}")
 
@@ -56,7 +66,7 @@ class BangumiCalendarPlugin(Star):
         """获取代理地址：配置优先，环境变量回退，均无则直连"""
         return get_proxy(self.config.get("proxy", ""))
 
-    def _sort_items(self, items: list) -> list:
+    def _sort_items(self, items: list[dict]) -> list[dict]:
         """根据配置的排序方式对番剧列表排序"""
         return sort_items(
             items,
@@ -93,7 +103,14 @@ class BangumiCalendarPlugin(Star):
 
     @bangumi_cn.command("今日")
     async def today_anime_cn(self, event: AstrMessageEvent):
-        """查看今日更新的新番"""
+        """查看今日更新的新番。
+
+        Args:
+            event: AstrBot 消息事件。
+
+        Returns:
+            AsyncGenerator: 渲染成功时产出图片消息，失败时产出失败提示文本。
+        """
         url = await self._render_image()
         if url:
             yield event.image_result(url)
@@ -103,21 +120,42 @@ class BangumiCalendarPlugin(Star):
     @filter.permission_type(filter.PermissionType.ADMIN)
     @bangumi_cn.command("推送")
     async def manual_push_cn(self, event: AstrMessageEvent):
-        """手动推送今日新番到所有目标"""
+        """手动推送今日新番到所有目标。
+
+        Args:
+            event: AstrBot 消息事件。
+
+        Returns:
+            AsyncGenerator: 产出包含推送目标数的文本结果。
+        """
         count = await self._push_to_all_groups()
         yield event.plain_result(f"已向 {count} 个目标推送今日新番")
 
     @filter.permission_type(filter.PermissionType.ADMIN)
     @bangumi_cn.command("状态")
     async def check_status_cn(self, event: AstrMessageEvent):
-        """查看插件运行状态"""
+        """查看插件运行状态。
+
+        Args:
+            event: AstrBot 消息事件。
+
+        Returns:
+            AsyncGenerator: 产出状态信息文本。
+        """
         yield event.plain_result(self._build_status_text())
 
     # ---- 英文指令 ----
 
     @bangumi_en.command("today")
     async def today_anime_en(self, event: AstrMessageEvent):
-        """View today's anime schedule"""
+        """View today's anime schedule.
+
+        Args:
+            event: AstrBot message event.
+
+        Returns:
+            AsyncGenerator: image result on success, failure text otherwise.
+        """
         url = await self._render_image()
         if url:
             yield event.image_result(url)
@@ -127,14 +165,28 @@ class BangumiCalendarPlugin(Star):
     @filter.permission_type(filter.PermissionType.ADMIN)
     @bangumi_en.command("push")
     async def manual_push_en(self, event: AstrMessageEvent):
-        """Push today's anime to all targets"""
+        """Push today's anime to all targets.
+
+        Args:
+            event: AstrBot message event.
+
+        Returns:
+            AsyncGenerator: text result with the pushed target count.
+        """
         count = await self._push_to_all_groups()
         yield event.plain_result(f"已向 {count} 个目标推送今日新番")
 
     @filter.permission_type(filter.PermissionType.ADMIN)
     @bangumi_en.command("status")
     async def check_status_en(self, event: AstrMessageEvent):
-        """Check plugin status"""
+        """Check plugin status.
+
+        Args:
+            event: AstrBot message event.
+
+        Returns:
+            AsyncGenerator: status text result.
+        """
         yield event.plain_result(self._build_status_text())
 
     def _build_status_text(self) -> str:
@@ -153,7 +205,11 @@ class BangumiCalendarPlugin(Star):
         )
 
     async def terminate(self):
-        """插件卸载时停止定时任务"""
+        """插件卸载时停止定时任务。
+
+        Returns:
+            None: 取消定时任务并等待其退出。
+        """
         if self._monitoring_task:
             self._monitoring_task.cancel()
             try:
@@ -166,7 +222,7 @@ class BangumiCalendarPlugin(Star):
         """获取Bangumi每周放送日历（自动重试）"""
         return await fetch_calendar(self.config.get("max_retries", 3), self._get_proxy())
 
-    def _get_today_items(self, calendar: list) -> list:
+    def _get_today_items(self, calendar: list[dict]) -> list[dict]:
         """从日历数据中提取今日番剧"""
         today_weekday = datetime.datetime.now().isoweekday()
         return get_today_items(calendar, today_weekday)

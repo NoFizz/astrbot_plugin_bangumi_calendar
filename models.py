@@ -3,6 +3,9 @@
 所有模块从这里取常量，避免散落的魔法值。
 """
 
+# Copyright 2026 NoFizz
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 import os
 
 BANGUMI_CALENDAR_URL = "https://api.bgm.tv/calendar"
