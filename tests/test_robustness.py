@@ -376,3 +376,62 @@ class TestCleanUmosDedup:
         """Given 重复项仅空白不同，When 清洗，Then 去空白后视为同一目标。"""
         plugin = make_plugin(umos=["a", " a ", "a"])
         assert plugin._get_target_umos() == ["a"]
+
+
+class TestCleanupOldCovers:
+    """``cleanup_old_covers`` 按 max(atime, mtime) 判断过期；``_daily_task`` 推送后清理。"""
+
+    @staticmethod
+    def _touch(path, atime, mtime):
+        """写文件并设置访问/修改时间。
+
+        Args:
+            path: 文件路径。
+            atime: 访问时间戳。
+            mtime: 修改时间戳。
+        """
+        path.write_bytes(b"x")
+        os.utime(path, (atime, mtime))
+
+    def test_removes_files_expired_by_both_times(self, tmp_path):
+        """Given 文件 atime/mtime 均已过期，When 清理，Then 被删除。"""
+        old = time.time() - 40 * 86400
+        expired = tmp_path / "expired.jpg"
+        self._touch(expired, old, old)
+        count = service_mod.cleanup_old_covers(str(tmp_path), 30)
+        assert count == 1
+        assert not expired.exists()
+
+    def test_fresh_mtime_keeps_stale_atime_file(self, tmp_path):
+        """Given 文件 atime 过期但 mtime 新鲜（Windows atime 不可靠场景），When 清理，Then 保留。"""
+        old = time.time() - 40 * 86400
+        fresh = time.time() - 1 * 86400
+        kept = tmp_path / "kept.jpg"
+        self._touch(kept, old, fresh)
+        assert service_mod.cleanup_old_covers(str(tmp_path), 30) == 0
+        assert kept.exists()
+
+    def test_daily_task_cleans_after_push(self, make_plugin, monkeypatch, tmp_path):
+        """Given 每日任务完成一次推送，When 进入下一轮等待，Then 已通过 to_thread 清理缓存。"""
+        monkeypatch.setattr(plugin_main, "_COVERS_DIR", str(tmp_path))
+        plugin = make_plugin(umos=["a"])
+        plugin._push_to_all_groups = AsyncMock()
+        sleeps = {"n": 0}
+
+        async def fake_sleep(_sec):
+            sleeps["n"] += 1
+            if sleeps["n"] >= 2:
+                raise asyncio.CancelledError()
+
+        monkeypatch.setattr(plugin_main.asyncio, "sleep", fake_sleep)
+        to_thread_calls = []
+        real_to_thread = asyncio.to_thread
+
+        async def fake_to_thread(fn, *args):
+            to_thread_calls.append(fn)
+            return await real_to_thread(fn, *args)
+
+        monkeypatch.setattr(plugin_main.asyncio, "to_thread", fake_to_thread)
+        asyncio.run(plugin._daily_task())
+        plugin._push_to_all_groups.assert_awaited_once()
+        assert plugin_main.cleanup_old_covers in to_thread_calls

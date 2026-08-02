@@ -295,6 +295,8 @@ class BangumiCalendarPlugin(Star):
                 umos = self._get_target_umos()
                 if umos:
                     await self._push_to_all_groups()
+                    # 推送完成后清理过期缓存（文件 IO 卸载到线程，避免阻塞事件循环）
+                    await asyncio.to_thread(cleanup_old_covers, _COVERS_DIR, _CACHE_EXPIRE_DAYS)
                 else:
                     logger.info("[Bangumi日历] 未配置推送目标，跳过")
             except asyncio.CancelledError:

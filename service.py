@@ -200,7 +200,7 @@ def cleanup_old_covers(covers_dir: str, expire_days: int) -> int:
 
     Args:
         covers_dir: 封面缓存目录。
-        expire_days: 过期天数（按 atime 判断）。
+        expire_days: 过期天数（按 max(atime, mtime) 判断，Windows atime 不可靠）。
 
     Returns:
         int: 清理的封面数量。
@@ -210,7 +210,11 @@ def cleanup_old_covers(covers_dir: str, expire_days: int) -> int:
     count = 0
     for f in os.listdir(covers_dir):
         path = os.path.join(covers_dir, f)
-        if os.path.isfile(path) and now - os.path.getatime(path) > expire:
+        try:
+            st = os.stat(path)
+        except OSError:
+            continue
+        if os.path.isfile(path) and now - max(st.st_atime, st.st_mtime) > expire:
             try:
                 os.remove(path)
                 count += 1
