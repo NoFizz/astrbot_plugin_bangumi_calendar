@@ -5,6 +5,7 @@ import asyncio
 import datetime
 import html as html_mod
 import os
+from collections.abc import AsyncGenerator
 
 # 测试通过 plugin_main.httpx.AsyncClient 做 monkeypatch（httpx 是共享模块对象，
 # service.py 中的属性查找同样生效），故在此保留导入并在 __all__ 中再导出。
@@ -111,11 +112,8 @@ class BangumiCalendarPlugin(Star):
         Returns:
             AsyncGenerator: 渲染成功时产出图片消息，失败时产出失败提示文本。
         """
-        url = await self._render_image()
-        if url:
-            yield event.image_result(url)
-        else:
-            yield event.plain_result("获取新番信息失败，请稍后再试")
+        async for result in self._handle_today(event):
+            yield result
 
     @filter.permission_type(filter.PermissionType.ADMIN)
     @bangumi_cn.command("推送")
@@ -128,8 +126,8 @@ class BangumiCalendarPlugin(Star):
         Returns:
             AsyncGenerator: 产出包含推送目标数的文本结果。
         """
-        count = await self._push_to_all_groups()
-        yield event.plain_result(f"已向 {count} 个目标推送今日新番")
+        async for result in self._handle_push(event):
+            yield result
 
     @filter.permission_type(filter.PermissionType.ADMIN)
     @bangumi_cn.command("状态")
@@ -142,7 +140,8 @@ class BangumiCalendarPlugin(Star):
         Returns:
             AsyncGenerator: 产出状态信息文本。
         """
-        yield event.plain_result(self._build_status_text())
+        async for result in self._handle_status(event):
+            yield result
 
     # ---- 英文指令 ----
 
@@ -156,11 +155,8 @@ class BangumiCalendarPlugin(Star):
         Returns:
             AsyncGenerator: image result on success, failure text otherwise.
         """
-        url = await self._render_image()
-        if url:
-            yield event.image_result(url)
-        else:
-            yield event.plain_result("获取新番信息失败，请稍后再试")
+        async for result in self._handle_today(event):
+            yield result
 
     @filter.permission_type(filter.PermissionType.ADMIN)
     @bangumi_en.command("push")
@@ -173,8 +169,8 @@ class BangumiCalendarPlugin(Star):
         Returns:
             AsyncGenerator: text result with the pushed target count.
         """
-        count = await self._push_to_all_groups()
-        yield event.plain_result(f"已向 {count} 个目标推送今日新番")
+        async for result in self._handle_push(event):
+            yield result
 
     @filter.permission_type(filter.PermissionType.ADMIN)
     @bangumi_en.command("status")
@@ -186,6 +182,45 @@ class BangumiCalendarPlugin(Star):
 
         Returns:
             AsyncGenerator: status text result.
+        """
+        async for result in self._handle_status(event):
+            yield result
+
+    async def _handle_today(self, event: AstrMessageEvent) -> AsyncGenerator:
+        """中英文「今日」命令共享核心：渲染今日新番图，失败时返回提示文案。
+
+        Args:
+            event: AstrBot 消息事件。
+
+        Returns:
+            AsyncGenerator: 渲染成功时产出图片消息，失败时产出失败提示文本。
+        """
+        url = await self._render_image()
+        if url:
+            yield event.image_result(url)
+        else:
+            yield event.plain_result("获取新番信息失败，请稍后再试")
+
+    async def _handle_push(self, event: AstrMessageEvent) -> AsyncGenerator:
+        """中英文「推送」命令共享核心：推送今日新番并报告成功数。
+
+        Args:
+            event: AstrBot 消息事件。
+
+        Returns:
+            AsyncGenerator: 产出包含推送目标数的文本结果。
+        """
+        count = await self._push_to_all_groups()
+        yield event.plain_result(f"已向 {count} 个目标推送今日新番")
+
+    async def _handle_status(self, event: AstrMessageEvent) -> AsyncGenerator:
+        """中英文「状态」命令共享核心：产出状态信息文本。
+
+        Args:
+            event: AstrBot 消息事件。
+
+        Returns:
+            AsyncGenerator: 产出状态信息文本。
         """
         yield event.plain_result(self._build_status_text())
 
