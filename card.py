@@ -30,10 +30,12 @@ HTML_TMPL = '''
       --text: #18191C;            /* 标题/正文（近黑）= 官方 --text1 */
       --text-secondary: #61666D;  /* 次要文字 = 官方 --text2 */
       --text-muted: #9499A0;      /* 辅助/弱化文字 = 官方 --text3 */
-      --primary: #00AEEC;         /* 品牌蓝（在看人数等数据强调/序号区背景）= 官方 --brand_blue */
+      --primary: #00AEEC;         /* 品牌蓝（在看人数等数据强调）= 官方 --brand_blue */
       --accent: #FF6699;          /* 品牌粉（头部/评分/标题竖条/tag 徽章）= 官方 --brand_pink / --Pi5 */
       --on-accent: #FFFFFF;       /* 品牌粉底上的文字 = 官方 --text_white */
-      --on-primary: #FFFFFF;      /* 品牌蓝底上的文字（序号区数字）= 官方 --text_white */
+      --on-primary: #FFFFFF;      /* 品牌蓝底上的文字 = 官方 --text_white */
+      --index-bg: #BFEDFA;        /* 序号区淡蓝底 = 官方 --Lb2（比品牌蓝浅，与白/灰背景和谐） */
+      --index-num: #008AC5;       /* 序号数字深蓝 = 官方 --v_brand_blue_active / --Lb6（保证浅蓝底上的对比度） */
       --subtle: #F1F2F3;          /* 次面背景（封面占位底）= 官方 --graph_bg_regular */
       --border: #E3E5E7;          /* 边框 = 官方 --line_regular / --Ga2 */
       --card-border: #E3E5E7;     /* 卡片边框 = 官方 --line_regular / --Ga2 */
@@ -60,14 +62,11 @@ HTML_TMPL = '''
       overflow-x: hidden;
     }
 
-    /* 头部：品牌粉渐变（官方色阶 Pi5→Pi4→Pi3）+ 白色高光圆斑，底部透明白渐变指示条 */
+    /* 头部：品牌粉纯色（官方 --brand_pink #FF6699，无渐变），底部透明白渐变指示条 */
     .header {
       position: relative; text-align: center;
       padding: 32px 24px 28px;
-      background:
-        radial-gradient(circle at 12% 130%, rgba(255, 255, 255, 0.16), transparent 42%),
-        radial-gradient(circle at 90% -30%, rgba(255, 255, 255, 0.14), transparent 40%),
-        linear-gradient(135deg, #FF6699 0%, #FF8CB0 60%, #FFB3CA 100%);
+      background: var(--accent);
       border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     }
     .header::after {
@@ -132,15 +131,15 @@ HTML_TMPL = '''
     .anime-card .rank .rank-value { color: var(--primary); font-weight: 700; }
     .anime-card .rank .rank-missing { color: var(--text-muted); font-weight: 400; }
 
-    /* 序号区（右栏）：88px 定宽，品牌蓝底 + 左边框分隔，白色大号数字垂直居中 */
+    /* 序号区（右栏）：88px 定宽，淡蓝底（官方 --Lb2）+ 左边框分隔，深蓝大号数字垂直居中 */
     .anime-card .index-col {
       width: 88px; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
-      background: var(--primary); border-left: 1px solid var(--primary);
+      background: var(--index-bg); border-left: 1px solid var(--index-bg);
     }
     .anime-card .index-num {
       font-family: var(--font-serif); font-size: 40px; font-weight: 700;
-      color: var(--on-primary); line-height: 1;
+      color: var(--index-num); line-height: 1;
     }
     /* tag 行：flex 可换行，浅粉底胶囊徽章（品牌粉系，与评分强调一致） */
     .anime-card .tags {

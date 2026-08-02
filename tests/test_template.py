@@ -244,13 +244,14 @@ class TestTagsRow:
 
 
 class TestIndexColumnBlue:
-    """序号区品牌蓝改版：背景 --primary、数字 --on-primary 白字。"""
+    """序号区淡蓝改版：背景 --index-bg（官方 Lb2）、数字 --index-num 深蓝。"""
 
-    def test_index_col_uses_brand_blue_background(self):
-        """Given HTML_TMPL 源码，Then 序号区背景为品牌蓝、数字为白字且变量已定义。"""
-        assert "background: var(--primary);" in HTML_TMPL
-        assert "color: var(--on-primary);" in HTML_TMPL
-        assert "--on-primary: #FFFFFF;" in HTML_TMPL
+    def test_index_col_uses_light_blue_background(self):
+        """Given HTML_TMPL 源码，Then 序号区背景为淡蓝、数字为深蓝且变量已定义。"""
+        assert "background: var(--index-bg);" in HTML_TMPL
+        assert "color: var(--index-num);" in HTML_TMPL
+        assert "--index-bg: #BFEDFA;" in HTML_TMPL
+        assert "--index-num: #008AC5;" in HTML_TMPL
 
     def test_index_col_keeps_88px_width_and_centered(self):
         """Given HTML_TMPL 源码，Then 序号区保留 88px 定宽与垂直居中布局。"""
