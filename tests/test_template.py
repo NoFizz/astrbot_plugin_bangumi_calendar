@@ -246,11 +246,11 @@ class TestTagsRow:
 
 
 class TestIndexColumn:
-    """序号区：白底与信息区一致、浅灰左边框分隔、品牌粉数字。"""
+    """序号区：左栏浅灰底、右侧浅灰分隔线、品牌粉数字。"""
 
-    def test_index_col_uses_card_background_and_pink_number(self):
-        """Given HTML_TMPL 源码，Then 序号区背景与信息区同色（--card-bg）、数字为品牌粉（--accent）、浅灰分隔线。"""
-        assert "background: var(--card-bg); border-left: 1px solid var(--card-border);" in HTML_TMPL
+    def test_index_col_uses_subtle_background_and_pink_number(self):
+        """Given HTML_TMPL 源码，Then 序号区背景为浅灰（--subtle）、数字为品牌粉（--accent）、右侧分隔线。"""
+        assert "background: var(--subtle); border-right: 1px solid var(--card-border);" in HTML_TMPL
         assert "color: var(--accent);" in HTML_TMPL
 
     def test_index_col_keeps_88px_width_and_centered(self):

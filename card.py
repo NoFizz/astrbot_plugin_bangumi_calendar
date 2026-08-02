@@ -135,11 +135,11 @@ HTML_TMPL = '''
     .anime-card .meta .score { color: var(--accent); font-weight: 700; font-size: 22px; }
     .anime-card .meta .doing { color: var(--primary); font-weight: 700; }
 
-    /* 序号区（右栏）：88px 定宽，白底与信息区一致，浅灰左边框分隔，品牌粉大号数字垂直居中 */
+    /* 序号区（左栏）：88px 定宽，浅灰底，右侧浅灰分隔线，品牌粉大号数字垂直居中 */
     .anime-card .index-col {
       width: 88px; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
-      background: var(--card-bg); border-left: 1px solid var(--card-border);
+      background: var(--subtle); border-right: 1px solid var(--card-border);
     }
     .anime-card .index-num {
       font-family: var(--font-serif); font-size: 40px; font-weight: 700;
@@ -171,6 +171,9 @@ HTML_TMPL = '''
     <div class="body">
       {% for a in items %}
       <div class="anime-card">
+        <div class="index-col">
+          <div class="index-num">{{ a.index | e }}</div>
+        </div>
         {% if a.cover %}
         <!-- onerror：封面加载失败时隐藏 img、显示占位（名称已转义，注入无法破坏结构） -->
         <img class="cover" src="{{ a.cover | e }}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="" />
@@ -197,9 +200,6 @@ HTML_TMPL = '''
           {% if a.tags %}
           <div class="tags">{% for t in a.tags %}<span class="tag">{{ t | e }}</span>{% endfor %}</div>
           {% endif %}
-        </div>
-        <div class="index-col">
-          <div class="index-num">{{ a.index | e }}</div>
         </div>
       </div>
       {% endfor %}
