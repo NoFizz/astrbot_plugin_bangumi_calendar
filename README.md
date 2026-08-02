@@ -29,7 +29,7 @@
 
 ## 截图 (Screenshots)
 
-![推送卡片示例](./docs/screenshots/card.png)
+> 待补充：推送卡片效果图（由维护者提供）
 
 ## 安装
 
