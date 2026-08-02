@@ -9,6 +9,7 @@ import asyncio
 import datetime
 from unittest.mock import AsyncMock
 
+import httpx
 import pytest
 
 import astrbot_plugin_bangumi_calendar.main as plugin_main
@@ -364,10 +365,14 @@ class TestFetchCalendar:
         assert captured["kwargs"]["proxy"] is None
 
     def test_failure_returns_none(self, make_plugin, monkeypatch):
-        """Given 请求抛异常且 max_retries=1，When 抓取，Then 返回 None 不崩溃。"""
+        """Given 请求抛 httpx.HTTPError 且 max_retries=1，When 抓取，Then 返回 None 不崩溃。
+
+        异常收窄后 ``fetch_calendar`` 只捕获 httpx.HTTPError 与 json.JSONDecodeError，
+        故用 ``httpx.ConnectError`` 触发重试路径；RuntimeError 等未知异常会直接传播。
+        """
 
         async def boom(url):
-            raise RuntimeError("connection refused")
+            raise httpx.ConnectError("connection refused")
 
         self._install_fake_client(monkeypatch, boom)
         plugin = make_plugin(proxy="", max_retries=1)

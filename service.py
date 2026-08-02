@@ -5,6 +5,7 @@
 
 import asyncio
 import base64
+import json
 import os
 import time
 
@@ -105,7 +106,7 @@ def _store_cached_cover(anime_id, content: bytes, content_type: str) -> str:
     return f"data:{mime};base64,{base64.b64encode(content).decode()}"
 
 
-async def fetch_calendar(config_retries: int, proxy: str | None) -> list | None:
+async def fetch_calendar(config_retries: int, proxy: str | None) -> list[dict] | None:
     """获取 Bangumi 每周放送日历（自动重试）。
 
     Args:
@@ -113,24 +114,29 @@ async def fetch_calendar(config_retries: int, proxy: str | None) -> list | None:
         proxy: 代理地址，None 表示直连。
 
     Returns:
-        list | None: 日历数据；重试耗尽后返回 None。
+        list[dict] | None: 日历数据；重试耗尽后返回 None。
+
+    Raises:
+        Exception: 非 httpx.HTTPError/json.JSONDecodeError 的意外异常直接传播，
+        不做吞没（便于上层发现编程错误）。
     """
     max_retries = config_retries
     if max_retries < 1:
         max_retries = 1
-    for attempt in range(max_retries):
-        try:
-            async with httpx.AsyncClient(
-                headers=BANGUMI_HEADERS, timeout=20, follow_redirects=True, proxy=proxy
-            ) as client:
+    # AsyncClient 在重试循环外创建一次，循环内复用同一连接池
+    async with httpx.AsyncClient(
+        headers=BANGUMI_HEADERS, timeout=20, follow_redirects=True, proxy=proxy
+    ) as client:
+        for attempt in range(max_retries):
+            try:
                 resp = await client.get(BANGUMI_CALENDAR_URL)
                 if resp.status_code == 200:
                     return resp.json()
                 logger.warning(f"[Bangumi日历] API返回状态码: {resp.status_code} (第{attempt + 1}次)")
-        except Exception as e:
-            logger.warning(f"[Bangumi日历] 请求异常: {type(e).__name__}: {e} (第{attempt + 1}次)")
-        if attempt < max_retries - 1:
-            await asyncio.sleep(3 * (attempt + 1))
+            except (httpx.HTTPError, json.JSONDecodeError) as e:
+                logger.warning(f"[Bangumi日历] 请求异常: {type(e).__name__}: {e} (第{attempt + 1}次)")
+            if attempt < max_retries - 1:
+                await asyncio.sleep(3 * (attempt + 1))
     logger.error(f"[Bangumi日历] 重试{max_retries}次后仍然失败")
     return None
 

@@ -289,3 +289,76 @@ class TestFileIOOffload:
         assert "http://x/2.jpg" in result  # 走下载
         assert "_read_cached_cover" in calls
         assert "_store_cached_cover" in calls
+
+
+class _ErrorClient:
+    """每次请求都抛指定异常的假客户端，并记录实例化次数。"""
+
+    instances = 0
+
+    def __init__(self, exc):
+        """初始化。
+
+        Args:
+            exc: 每次 get 抛出的异常实例。
+        """
+        self.exc = exc
+        type(self).instances += 1
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *exc):
+        return False
+
+    async def get(self, url):
+        raise self.exc
+
+
+class TestFetchCalendarNarrow:
+    """``fetch_calendar`` 只捕获 httpx.HTTPError 与 json.JSONDecodeError。"""
+
+    @pytest.fixture(autouse=True)
+    def _reset_instances(self):
+        """每个用例前重置实例计数。"""
+        _ErrorClient.instances = 0
+        yield
+
+    def test_connect_error_retries_then_none(self, monkeypatch):
+        """Given 每次请求抛 httpx.ConnectError 且 retries=3，When 抓取，Then 重试耗尽返回 None。"""
+        sleeps = []
+        monkeypatch.setattr(
+            asyncio, "sleep", AsyncMock(side_effect=lambda s: sleeps.append(s))
+        )
+        monkeypatch.setattr(
+            service_mod.httpx, "AsyncClient", lambda **kw: _ErrorClient(httpx.ConnectError("refused"))
+        )
+        assert asyncio.run(service_mod.fetch_calendar(3, None)) is None
+        assert sleeps == [3, 6]
+
+    def test_runtime_error_propagates(self, monkeypatch):
+        """Given 请求抛 RuntimeError，When 抓取，Then 异常直接传播（pytest.raises）。"""
+        monkeypatch.setattr(
+            service_mod.httpx, "AsyncClient", lambda **kw: _ErrorClient(RuntimeError("boom"))
+        )
+        with pytest.raises(RuntimeError):
+            asyncio.run(service_mod.fetch_calendar(2, None))
+
+
+class TestAsyncClientReuse:
+    """``fetch_calendar`` 复用单个 AsyncClient：重试循环外创建一次。"""
+
+    @pytest.fixture(autouse=True)
+    def _reset_instances(self):
+        """每个用例前重置实例计数。"""
+        _ErrorClient.instances = 0
+        yield
+
+    def test_client_instantiated_once_across_retries(self, monkeypatch):
+        """Given 多次重试，When 抓取，Then AsyncClient 只实例化一次。"""
+        monkeypatch.setattr(asyncio, "sleep", AsyncMock())
+        monkeypatch.setattr(
+            service_mod.httpx, "AsyncClient", lambda **kw: _ErrorClient(httpx.ConnectError("refused"))
+        )
+        assert asyncio.run(service_mod.fetch_calendar(5, None)) is None
+        assert _ErrorClient.instances == 1

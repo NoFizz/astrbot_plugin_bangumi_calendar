@@ -274,8 +274,8 @@ class BangumiCalendarPlugin(Star):
                 logger.info(f"[Bangumi日历] 已推送至 {umo}")
                 success += 1
                 await asyncio.sleep(2)
-            except Exception as e:
-                logger.error(f"[Bangumi日历] 推送至 {umo} 失败: {e}")
+            except Exception:
+                logger.exception(f"[Bangumi日历] 推送至 {umo} 失败")
         return success
 
     def _calculate_sleep_time(self) -> float:
@@ -299,6 +299,6 @@ class BangumiCalendarPlugin(Star):
                     logger.info("[Bangumi日历] 未配置推送目标，跳过")
             except asyncio.CancelledError:
                 break
-            except Exception as e:
-                logger.error(f"[Bangumi日历] 定时任务异常: {e}")
+            except Exception:
+                logger.exception("[Bangumi日历] 定时任务异常")
                 await asyncio.sleep(300)
