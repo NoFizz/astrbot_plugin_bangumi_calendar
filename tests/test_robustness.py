@@ -38,6 +38,7 @@ class TestRenderRetry:
         plugin._fetch_calendar = AsyncMock(return_value=[{"weekday": {"id": 1}, "items": [{"id": 1, "name": "A"}]}])
         plugin._get_today_items = lambda calendar: calendar[0]["items"]
         plugin._download_covers = AsyncMock(return_value={})
+        plugin._fetch_ranks = AsyncMock(return_value={})
         plugin.html_render = AsyncMock(side_effect=side_effect)
         return plugin
 
@@ -72,6 +73,58 @@ class TestRenderRetry:
         monkeypatch.setattr(plugin_main.asyncio, "sleep", AsyncMock())
         assert asyncio.run(plugin._render_image()) is None
         assert plugin.html_render.call_count == 3
+
+    def test_render_image_injects_index_and_rank(self, make_plugin):
+        """Given 渲染路径全部打桩，When 渲染，Then template_data 每项带递增 index 与 rank。"""
+        plugin = make_plugin(max_items=0)
+        plugin._fetch_calendar = AsyncMock(
+            return_value=[
+                {
+                    "weekday": {"id": 1},
+                    "items": [
+                        {"id": 1, "name": "A", "name_cn": "甲", "rating": {"score": 9.0}},
+                        {"id": 2, "name": "B", "name_cn": "乙", "rating": {"score": 8.0}},
+                    ],
+                }
+            ]
+        )
+        plugin._get_today_items = lambda calendar: calendar[0]["items"]
+        plugin._download_covers = AsyncMock(return_value={})
+        plugin._fetch_ranks = AsyncMock(return_value={1: 9565, 2: None})
+        captured = {}
+
+        async def fake_render(template, data, options=None):
+            captured["data"] = data
+            return "https://example.com/card.png"
+
+        plugin.html_render = fake_render
+        url = asyncio.run(plugin._render_image())
+        assert url == "https://example.com/card.png"
+        items = captured["data"]["items"]
+        assert [it["index"] for it in items] == [1, 2]  # 按排序截断后的顺序递增
+        assert [it["rank"] for it in items] == [9565, None]
+
+
+class TestRankFetchCache:
+    """``_fetch_ranks`` 实例级内存缓存：同 ID 不重复请求，新 ID 才补请求。"""
+
+    def test_caches_ranks_across_renders(self, make_plugin, monkeypatch):
+        """Given 两次渲染涉及相同 ID，When 第二次获取，Then 只请求新增 ID。"""
+        plugin = make_plugin()
+        calls = []
+
+        async def fake_fetch(items, proxy):
+            ids = [it["id"] for it in items]
+            calls.append(set(ids))
+            return {aid: aid * 10 for aid in ids}
+
+        monkeypatch.setattr(plugin_main, "fetch_ranks", fake_fetch)
+        # 快照拷贝：返回值是实例级缓存本身（后续调用会继续更新），断言其内容而非引用
+        first = dict(asyncio.run(plugin._fetch_ranks([{"id": 1}, {"id": 2}])))
+        second = dict(asyncio.run(plugin._fetch_ranks([{"id": 2}, {"id": 3}])))
+        assert first == {1: 10, 2: 20}
+        assert second == {1: 10, 2: 20, 3: 30}
+        assert calls == [{1, 2}, {3}]
 
 
 class _FakeResponse:

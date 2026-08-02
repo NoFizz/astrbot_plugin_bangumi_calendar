@@ -9,6 +9,7 @@
 import os
 
 BANGUMI_CALENDAR_URL = "https://api.bgm.tv/calendar"
+BANGUMI_SUBJECTS_URL = "https://api.bgm.tv/v0/subjects"
 BANGUMI_HEADERS = {
     "User-Agent": "astrbot_plugin_bangumi_calendar/1.1.0 (https://github.com/AstrBotDevs/AstrBot)",
     "Accept": "application/json",

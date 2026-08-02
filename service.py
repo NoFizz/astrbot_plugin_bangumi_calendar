@@ -1,4 +1,4 @@
-"""异步网络与封面缓存：抓取日历、下载封面（本地缓存 + 并发）、清理过期缓存。
+"""异步网络与封面缓存：抓取日历、获取全站排名、下载封面（本地缓存 + 并发）、清理过期缓存。
 
 依赖 models 的常量；无 astrbot 依赖（仅 logger 用于日志）。
 """
@@ -16,7 +16,13 @@ import httpx
 
 from astrbot.api import logger
 
-from .models import BANGUMI_CALENDAR_URL, BANGUMI_HEADERS, _COVERS_DIR, _DOWNLOAD_SEM_LIMIT
+from .models import (
+    BANGUMI_CALENDAR_URL,
+    BANGUMI_HEADERS,
+    BANGUMI_SUBJECTS_URL,
+    _COVERS_DIR,
+    _DOWNLOAD_SEM_LIMIT,
+)
 from .parser import safe_anime_id
 
 # 缓存扩展名与 MIME 的映射：命中时按扩展名反查 MIME，写入时按 MIME 选扩展名
@@ -140,6 +146,44 @@ async def fetch_calendar(config_retries: int, proxy: str | None) -> list[dict] |
                 await asyncio.sleep(3 * (attempt + 1))
     logger.error(f"[Bangumi日历] 重试{max_retries}次后仍然失败")
     return None
+
+
+async def fetch_ranks(items: list[dict], proxy: str | None) -> dict[int, int | None]:
+    """并发获取番剧的 Bangumi 全站排名（``/v0/subjects/{id}`` 的 ``rating.rank``）。
+
+    单请求超时 10s、信号量限流（与封面下载共用 ``_DOWNLOAD_SEM_LIMIT``）；
+    单项失败只记 warning 并降级为 None，不影响其他项与整体调用。
+
+    Args:
+        items: 番剧条目列表（含整数 id）。
+        proxy: 代理地址，None 表示直连。
+
+    Returns:
+        dict[int, int | None]: subject_id → 全站排名；rank 缺失/为 0/请求失败为 None。
+    """
+    result: dict[int, int | None] = {}
+    sem = asyncio.Semaphore(_DOWNLOAD_SEM_LIMIT)
+
+    async def _fetch(client: httpx.AsyncClient, anime_id: int):
+        # 单项异常整体吞掉（与 download_covers 的单项降级同模式），失败项不得拖垮整批
+        try:
+            async with sem:
+                resp = await client.get(f"{BANGUMI_SUBJECTS_URL}/{anime_id}", timeout=10)
+                if resp.status_code != 200:
+                    logger.warning(f"[Bangumi日历] 获取排名返回状态码 {resp.status_code} (id={anime_id})")
+                    return anime_id, None
+                rating = resp.json().get("rating") or {}
+                # rank 为 0 表示未上榜，与缺失同样映射为 None
+                return anime_id, rating.get("rank") or None
+        except Exception as e:
+            logger.warning(f"[Bangumi日历] 获取排名失败 {anime_id}: {type(e).__name__}: {e}")
+            return anime_id, None
+
+    ids = [item.get("id") for item in items if isinstance(item.get("id"), int)]
+    async with httpx.AsyncClient(headers=BANGUMI_HEADERS, timeout=15, follow_redirects=True, proxy=proxy) as client:
+        for anime_id, rank in await asyncio.gather(*(_fetch(client, aid) for aid in ids)):
+            result[anime_id] = rank
+    return result
 
 
 async def download_covers(items: list[dict], proxy: str | None) -> dict[str, str]:
