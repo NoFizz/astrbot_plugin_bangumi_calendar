@@ -43,12 +43,8 @@ HTML_TMPL = '''
       --radius-lg: 8px;           /* 大卡片圆角 */
       --shadow: 0 1px 0 rgba(0, 0, 0, 0.04);        /* 卡片默认投影 */
       --shadow-hover: 0 3px 6px rgba(0, 0, 0, 0.12); /* 浮层投影 */
-      /* 思源宋体：标题（衬线，端庄感） */
-      --font-serif: "Source Han Serif SC", "Source Han Serif CN", "Source Han Serif",
-        "Noto Serif SC", "思源宋体", SimSun, "宋体", serif;
-      /* 思源黑体：正文（无衬线，阅读友好） */
-      --font: "Source Han Sans SC", "Source Han Sans CN", "Source Han Sans",
-        "Noto Sans SC", "思源黑体", SimHei, "黑体", "Microsoft YaHei", "微软雅黑", sans-serif;
+      /* 全插件统一微软雅黑（用户指定），回退到系统无衬线字体 */
+      --font: "Microsoft YaHei", "微软雅黑", "PingFang SC", "Noto Sans SC", sans-serif;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -72,7 +68,7 @@ HTML_TMPL = '''
       background: linear-gradient(90deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.4));
     }
     .header h1 {
-      font-family: var(--font-serif); font-size: 34px; font-weight: 700;
+      font-family: var(--font); font-size: 34px; font-weight: 700;
       color: var(--on-accent); letter-spacing: -0.01em; line-height: 1.2;
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
     }
@@ -113,7 +109,7 @@ HTML_TMPL = '''
     /* 标题：思源宋体 + 品牌粉 3px 竖条（规范 §2.2 卡片标题写法），最多两行 */
     .anime-card .title {
       flex: 1; min-width: 0;
-      font-family: var(--font-serif); font-size: 24px; font-weight: 600;
+      font-family: var(--font); font-size: 24px; font-weight: 600;
       color: var(--text); line-height: 1.3; word-break: break-all;
       border-left: 3px solid var(--accent); padding-left: 10px;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
@@ -142,7 +138,7 @@ HTML_TMPL = '''
       background: var(--subtle); border-right: 1px solid var(--card-border);
     }
     .anime-card .index-num {
-      font-family: var(--font-serif); font-size: 40px; font-weight: 700;
+      font-family: var(--font); font-size: 40px; font-weight: 700;
       color: var(--accent); line-height: 1;
     }
     /* tag 行：flex 可换行，浅粉底胶囊徽章（品牌粉系，与评分强调一致） */
