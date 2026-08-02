@@ -31,6 +31,31 @@ from .service import cleanup_old_covers, download_covers, fetch_calendar
 __all__ = ["httpx"]
 
 
+# 用户可见文案表：_t() 按语言取模板并格式化，键为文案标识。
+# 英文表缺失的键回退中文表；两表都缺失时原样返回键名（仅编程错误时出现）。
+_REPLY_CN = {
+    "today_failed": "获取新番信息失败，请稍后再试",
+    "push_done": "已向 {count} 个目标推送今日新番",
+    "status_title": "Bangumi新番日历插件",
+    "status_push_time": "推送时间",
+    "status_targets": "目标数",
+    "status_proxy": "代理",
+    "status_direct": "直连",
+    "status_next_push": "距离下次推送: {hours}小时{minutes}分钟",
+}
+
+_REPLY_EN = {
+    "today_failed": "Failed to fetch anime info, please try again later",
+    "push_done": "Pushed today's anime to {count} target(s)",
+    "status_title": "Bangumi Calendar Plugin",
+    "status_push_time": "Push time",
+    "status_targets": "Targets",
+    "status_proxy": "Proxy",
+    "status_direct": "Direct",
+    "status_next_push": "Next push in {hours}h {minutes}m",
+}
+
+
 @register(
     "astrbot_plugin_bangumi_calendar",
     "NoFizz",
@@ -89,6 +114,24 @@ class BangumiCalendarPlugin(Star):
     def _cleanup_old_covers(self):
         """删除超过30天未使用的缓存封面"""
         cleanup_old_covers(_COVERS_DIR, _CACHE_EXPIRE_DAYS)
+
+    def _t(self, key: str, lang: str = "zh", **fmt: object) -> str:
+        """按语言取回复文案模板并格式化，缺失时回退中文。
+
+        Args:
+            key: 文案标识（_REPLY_CN/_REPLY_EN 的键）。
+            lang: 回复语言，zh 中文、en 英文，其他值回退中文。
+            **fmt: 模板格式化参数（如 push_done 的 count）。
+
+        Returns:
+            str: 格式化后的回复文案。
+        """
+        template = _REPLY_CN.get(key)
+        if lang == "en":
+            template = _REPLY_EN.get(key, template)
+        if template is None:
+            return key
+        return template.format(**fmt)
 
     @filter.command_group("新番")
     def bangumi_cn(self):
@@ -155,7 +198,7 @@ class BangumiCalendarPlugin(Star):
         Returns:
             AsyncGenerator: image result on success, failure text otherwise.
         """
-        async for result in self._handle_today(event):
+        async for result in self._handle_today(event, lang="en"):
             yield result
 
     @filter.permission_type(filter.PermissionType.ADMIN)
@@ -169,7 +212,7 @@ class BangumiCalendarPlugin(Star):
         Returns:
             AsyncGenerator: text result with the pushed target count.
         """
-        async for result in self._handle_push(event):
+        async for result in self._handle_push(event, lang="en"):
             yield result
 
     @filter.permission_type(filter.PermissionType.ADMIN)
@@ -183,14 +226,15 @@ class BangumiCalendarPlugin(Star):
         Returns:
             AsyncGenerator: status text result.
         """
-        async for result in self._handle_status(event):
+        async for result in self._handle_status(event, lang="en"):
             yield result
 
-    async def _handle_today(self, event: AstrMessageEvent) -> AsyncGenerator:
-        """中英文「今日」命令共享核心：渲染今日新番图，失败时返回提示文案。
+    async def _handle_today(self, event: AstrMessageEvent, lang: str = "zh") -> AsyncGenerator:
+        """中英文「今日」命令共享核心：渲染今日新番图，失败时返回对应语言提示文案。
 
         Args:
             event: AstrBot 消息事件。
+            lang: 回复语言，zh 中文、en 英文，默认中文。
 
         Returns:
             AsyncGenerator: 渲染成功时产出图片消息，失败时产出失败提示文本。
@@ -199,44 +243,53 @@ class BangumiCalendarPlugin(Star):
         if url:
             yield event.image_result(url)
         else:
-            yield event.plain_result("获取新番信息失败，请稍后再试")
+            yield event.plain_result(self._t("today_failed", lang))
 
-    async def _handle_push(self, event: AstrMessageEvent) -> AsyncGenerator:
+    async def _handle_push(self, event: AstrMessageEvent, lang: str = "zh") -> AsyncGenerator:
         """中英文「推送」命令共享核心：推送今日新番并报告成功数。
 
         Args:
             event: AstrBot 消息事件。
+            lang: 回复语言，zh 中文、en 英文，默认中文。
 
         Returns:
             AsyncGenerator: 产出包含推送目标数的文本结果。
         """
         count = await self._push_to_all_groups()
-        yield event.plain_result(f"已向 {count} 个目标推送今日新番")
+        yield event.plain_result(self._t("push_done", lang, count=count))
 
-    async def _handle_status(self, event: AstrMessageEvent) -> AsyncGenerator:
-        """中英文「状态」命令共享核心：产出状态信息文本。
+    async def _handle_status(self, event: AstrMessageEvent, lang: str = "zh") -> AsyncGenerator:
+        """中英文「状态」命令共享核心：产出对应语言的状态信息文本。
 
         Args:
             event: AstrBot 消息事件。
+            lang: 回复语言，zh 中文、en 英文，默认中文。
 
         Returns:
             AsyncGenerator: 产出状态信息文本。
         """
-        yield event.plain_result(self._build_status_text())
+        yield event.plain_result(self._build_status_text(lang=lang))
 
-    def _build_status_text(self) -> str:
-        """构建状态信息文本"""
+    def _build_status_text(self, lang: str = "zh") -> str:
+        """构建状态信息文本，标签文案按语言切换。
+
+        Args:
+            lang: 回复语言，zh 中文、en 英文，默认中文。
+
+        Returns:
+            str: 多行状态文本，数值与格式不随语言变化。
+        """
         sleep_time = self._calculate_sleep_time()
         hours = int(sleep_time / 3600)
         minutes = int((sleep_time % 3600) / 60)
         umos = self._get_target_umos()
         proxy = self._get_proxy()
         return (
-            f"Bangumi新番日历插件\n"
-            f"推送时间: {self.config.get('push_time', '07:00')}\n"
-            f"目标数: {len(umos)}\n"
-            f"代理: {proxy or '直连'}\n"
-            f"距离下次推送: {hours}小时{minutes}分钟"
+            f"{self._t('status_title', lang)}\n"
+            f"{self._t('status_push_time', lang)}: {self.config.get('push_time', '07:00')}\n"
+            f"{self._t('status_targets', lang)}: {len(umos)}\n"
+            f"{self._t('status_proxy', lang)}: {proxy or self._t('status_direct', lang)}\n"
+            f"{self._t('status_next_push', lang, hours=hours, minutes=minutes)}"
         )
 
     async def terminate(self):

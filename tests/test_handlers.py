@@ -78,41 +78,56 @@ class TestTodayHandlers:
         assert event.plain_texts == []
         plugin._render_image.assert_awaited_once_with()
 
-    @pytest.mark.parametrize("handler_name", ["today_anime_cn", "today_anime_en"])
-    def test_failure_yields_failure_text(self, make_plugin, handler_name):
-        """Given _render_image 返回 None，When 调用 today handler，Then 产出失败提示文案。"""
+    @pytest.mark.parametrize(
+        "handler_name,expected",
+        [
+            ("today_anime_cn", "获取新番信息失败，请稍后再试"),
+            ("today_anime_en", "Failed to fetch anime info, please try again later"),
+        ],
+    )
+    def test_failure_yields_failure_text(self, make_plugin, handler_name, expected):
+        """Given _render_image 返回 None，When 调用 today handler，Then 产出对应语言失败文案。"""
         plugin = make_plugin()
         plugin._render_image = AsyncMock(return_value=None)
         event = _RecordingEvent()
         results = asyncio.run(_collect(getattr(plugin, handler_name)(event)))
-        assert results == ["获取新番信息失败，请稍后再试"]
+        assert results == [expected]
         assert event.image_urls == []
-        assert event.plain_texts == ["获取新番信息失败，请稍后再试"]
+        assert event.plain_texts == [expected]
         plugin._render_image.assert_awaited_once_with()
 
 
 class TestPushHandlers:
     """``/新番 推送`` 与 ``/bangumi push``：委托 ``_push_to_all_groups`` 并报告推送数。"""
 
-    @pytest.mark.parametrize("handler_name", ["manual_push_cn", "manual_push_en"])
-    def test_yields_push_count_text(self, make_plugin, handler_name):
-        """Given _push_to_all_groups 返回 3，When 调用 push handler，Then 产出含推送数的文案。"""
+    @pytest.mark.parametrize(
+        "handler_name,expected",
+        [
+            ("manual_push_cn", "已向 3 个目标推送今日新番"),
+            ("manual_push_en", "Pushed today's anime to 3 target(s)"),
+        ],
+    )
+    def test_yields_push_count_text(self, make_plugin, handler_name, expected):
+        """Given _push_to_all_groups 返回 3，When 调用 push handler，Then 产出对应语言推送数文案。"""
         plugin = make_plugin()
         plugin._push_to_all_groups = AsyncMock(return_value=3)
         event = _RecordingEvent()
         results = asyncio.run(_collect(getattr(plugin, handler_name)(event)))
-        assert results == ["已向 3 个目标推送今日新番"]
+        assert results == [expected]
         assert event.image_urls == []
-        assert event.plain_texts == ["已向 3 个目标推送今日新番"]
+        assert event.plain_texts == [expected]
         plugin._push_to_all_groups.assert_awaited_once_with()
 
 
 class TestStatusHandlers:
     """``/新番 状态`` 与 ``/bangumi status``：委托 ``_build_status_text`` 并逐字节产出。"""
 
-    @pytest.mark.parametrize("handler_name", ["check_status_cn", "check_status_en"])
-    def test_yields_status_text(self, make_plugin, handler_name):
-        """Given _build_status_text 返回固定文本，When 调用 status handler，Then 原样产出。"""
+    @pytest.mark.parametrize(
+        "handler_name,expected_lang",
+        [("check_status_cn", "zh"), ("check_status_en", "en")],
+    )
+    def test_yields_status_text(self, make_plugin, handler_name, expected_lang):
+        """Given _build_status_text 返回固定文本，When 调用 status handler，Then 原样产出并传对应语言。"""
         plugin = make_plugin()
         plugin._build_status_text = MagicMock(return_value="STATUS_TEXT")
         event = _RecordingEvent()
@@ -120,7 +135,7 @@ class TestStatusHandlers:
         assert results == ["STATUS_TEXT"]
         assert event.image_urls == []
         assert event.plain_texts == ["STATUS_TEXT"]
-        plugin._build_status_text.assert_called_once_with()
+        plugin._build_status_text.assert_called_once_with(lang=expected_lang)
 
     def test_real_status_text_composition_with_proxy(self, make_plugin):
         """Given 配置了代理，When 组装状态文本，Then 文案逐字节符合预期。"""
