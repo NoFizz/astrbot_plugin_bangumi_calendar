@@ -203,19 +203,14 @@ class TestContract:
 
 
 class TestFooter:
-    """页脚：数据来源 + NoFizz 作者署名。"""
+    """页脚：数据来源 + Made by NoFizz 作者署名。"""
 
     def test_footer_has_data_source_and_credit(self):
-        """Given 模板源码，Then 页脚含数据来源与 NoFizz 署名。"""
+        """Given 模板源码，Then 页脚含数据来源与 Made by NoFizz 署名。"""
         html = _render([_item()])
 
         assert "数据来源: Bangumi · bangumi.tv" in html
-        assert '<div class="credit">NoFizz</div>' in html
-
-    def test_header_title_uses_song_font(self):
-        """Given HTML_TMPL 源码，Then 头部标题使用新宋体。"""
-        assert "--font-song" in HTML_TMPL
-        assert "NSimSun" in HTML_TMPL
+        assert '<div class="credit">Made by NoFizz</div>' in html
 
 
 class TestTagsRow:
@@ -265,10 +260,10 @@ class TestIndexColumn:
     """序号区：左栏白底、右侧浅灰分隔线、新宋体品牌粉数字、窄宽度。"""
 
     def test_index_col_uses_card_background_and_pink_number(self):
-        """Given HTML_TMPL 源码，Then 序号区背景为白（--card-bg）、数字为品牌粉（--accent）、右侧分隔线、新宋体。"""
+        """Given HTML_TMPL 源码，Then 序号区背景为白（--card-bg）、数字为品牌粉（--accent）、右侧分隔线、微软雅黑。"""
         assert "background: var(--card-bg); border-right: 1px solid var(--card-border);" in HTML_TMPL
         assert "color: var(--accent);" in HTML_TMPL
-        assert "font-family: var(--font-song);" in HTML_TMPL
+        assert "font-family: var(--font);" in HTML_TMPL
 
     def test_index_col_keeps_narrow_width_and_centered(self):
         """Given HTML_TMPL 源码，Then 序号区为 64px 定宽与垂直居中布局。"""

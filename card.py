@@ -45,8 +45,6 @@ HTML_TMPL = '''
       --shadow-hover: 0 3px 6px rgba(0, 0, 0, 0.12); /* 浮层投影 */
       /* 全插件统一微软雅黑（用户指定），回退到系统无衬线字体 */
       --font: "Microsoft YaHei", "微软雅黑", "PingFang SC", "Noto Sans SC", sans-serif;
-      /* 新宋体：标题与序号专用（用户指定），回退到宋体系列 */
-      --font-song: "NSimSun", "新宋体", SimSun, "宋体", serif;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -70,7 +68,7 @@ HTML_TMPL = '''
       background: linear-gradient(90deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.4));
     }
     .header h1 {
-      font-family: var(--font-song); font-size: 34px; font-weight: 700;
+      font-family: var(--font); font-size: 34px; font-weight: 700;
       color: var(--on-accent); letter-spacing: -0.01em; line-height: 1.2;
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
     }
@@ -140,7 +138,7 @@ HTML_TMPL = '''
       background: var(--card-bg); border-right: 1px solid var(--card-border);
     }
     .anime-card .index-num {
-      font-family: var(--font-song); font-size: 48px; font-weight: 700;
+      font-family: var(--font); font-size: 48px; font-weight: 700;
       color: var(--accent); line-height: 1;
     }
     /* tag 行：flex 可换行，浅粉底胶囊徽章（品牌粉系，与评分强调一致） */
@@ -208,7 +206,7 @@ HTML_TMPL = '''
     </div>
     <div class="footer">
       数据来源: Bangumi · bangumi.tv
-      <div class="credit">NoFizz</div>
+      <div class="credit">Made by NoFizz</div>
     </div>
   </div>
 </body>
