@@ -225,14 +225,22 @@ class BangumiCalendarPlugin(Star):
                 "viewport_height": 800,
                 "device_scale_factor_level": "high",
             }
-            url = await self.html_render(HTML_TMPL, template_data, options=options)
-            if url:
-                logger.info("[Bangumi日历] 图片渲染成功")
-            else:
-                logger.error("[Bangumi日历] html_render 返回空，渲染失败")
-            return url
-        except Exception as e:
-            logger.error(f"[Bangumi日历] 图片渲染失败: {e}")
+            # html_render 依赖 AstrBot 的浏览器服务，可能瞬时失败；最多重试 3 次（间隔 1s）
+            for attempt in range(3):
+                try:
+                    url = await self.html_render(HTML_TMPL, template_data, options=options)
+                    if url:
+                        logger.info("[Bangumi日历] 图片渲染成功")
+                        return url
+                    logger.warning(f"[Bangumi日历] html_render 返回空，渲染失败 (第{attempt + 1}次)")
+                except Exception as e:
+                    logger.warning(f"[Bangumi日历] html_render 渲染异常: {type(e).__name__}: {e} (第{attempt + 1}次)")
+                if attempt < 2:
+                    await asyncio.sleep(1)
+            logger.error("[Bangumi日历] html_render 渲染重试 3 次后仍然失败")
+            return None
+        except Exception:
+            logger.exception("[Bangumi日历] 图片渲染失败")
             return None
 
     async def _push_to_all_groups(self) -> int:
