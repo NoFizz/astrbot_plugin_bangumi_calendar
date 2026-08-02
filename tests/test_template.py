@@ -54,6 +54,7 @@ def _item(**overrides):
         "air_date": "2023-09-29",
         "cover": "",
         "rank": None,
+        "tags": [],
     }
     item.update(overrides)
     return item
@@ -197,3 +198,61 @@ class TestContract:
         assert 'class="info"' in html  # 中栏：番剧信息
         assert 'class="index-col"' in html  # 右栏：今日序号区
         assert "Bangumi 排名" in html  # 中栏含排名行
+
+
+class TestTagsRow:
+    """tag 行：有 tags 渲染胶囊徽章（已筛选，模板直接渲染），空 tags 不渲染行。"""
+
+    def test_renders_tag_chips_when_present(self):
+        """Given item 带 tags，When 渲染，Then 输出 tags 行与对应胶囊徽章。"""
+        html = _render([_item(tags=["漫画改", "TV", "科幻"])])
+
+        assert '<div class="tags">' in html
+        assert '<span class="tag">漫画改</span>' in html
+        assert '<span class="tag">TV</span>' in html
+        assert '<span class="tag">科幻</span>' in html
+
+    def test_empty_tags_list_renders_no_row(self):
+        """Given item tags 为空列表，When 渲染，Then 不输出 tags 行。"""
+        html = _render([_item(tags=[])])
+
+        assert 'class="tags"' not in html
+
+    def test_missing_tags_key_renders_no_row(self):
+        """Given item 缺 tags 键（旧数据兼容），When 渲染，Then 不输出 tags 行。"""
+        item = _item()
+        del item["tags"]
+        html = _render([item])
+
+        assert 'class="tags"' not in html
+
+    def test_tag_value_is_escaped(self):
+        """Given tag 含注入载荷，When 渲染，Then 被转义。"""
+        html = _render([_item(tags=[_SCRIPT_NAME])])
+
+        assert "&lt;script&gt;alert(1)&lt;/script&gt;" in html
+        assert _SCRIPT_NAME not in html
+
+    def test_source_has_tag_row_css_and_escape(self):
+        """Given HTML_TMPL 源码，Then tag 插值带 | e 转义且 flex 换行/胶囊样式齐全。"""
+        assert "{{ t | e }}" in HTML_TMPL
+        assert "flex-wrap" in HTML_TMPL
+        assert "gap: 6px" in HTML_TMPL
+        assert "margin-top: 8px" in HTML_TMPL
+        assert "999px" in HTML_TMPL
+        assert "var(--accent-soft)" in HTML_TMPL
+
+
+class TestIndexColumnBlue:
+    """序号区品牌蓝改版：背景 --primary、数字 --on-primary 白字。"""
+
+    def test_index_col_uses_brand_blue_background(self):
+        """Given HTML_TMPL 源码，Then 序号区背景为品牌蓝、数字为白字且变量已定义。"""
+        assert "background: var(--primary);" in HTML_TMPL
+        assert "color: var(--on-primary);" in HTML_TMPL
+        assert "--on-primary: #FFFFFF;" in HTML_TMPL
+
+    def test_index_col_keeps_88px_width_and_centered(self):
+        """Given HTML_TMPL 源码，Then 序号区保留 88px 定宽与垂直居中布局。"""
+        assert "width: 88px" in HTML_TMPL
+        assert "align-items: center" in HTML_TMPL

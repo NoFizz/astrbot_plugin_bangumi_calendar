@@ -6,7 +6,8 @@
   变量架构以便后续扩展）。
 - 思源宋体（标题）+ 思源黑体（正文）双字体回退链（规范 §2.1）。
 - 卡片圆角 8px、间距 4px 网格、规范阴影层级。
-- 三栏布局（760px）：左封面 150px | 中信息（标题/评分/在看/首播/排名）| 右序号区 88px。
+- 三栏布局（760px）：左封面 150px | 中信息（标题/评分/在看/首播/排名/tag 徽章）| 右序号区 88px
+  （品牌蓝底白字）。
 - 所有数据插值显式 ``| e`` 转义（不依赖 html_render 环境的 autoescape 开关）；
   ``or`` 优先级低于过滤器，必须加括号 ``(a.name_cn or a.name) | e``，否则
   仅 ``a.name`` 被转义而主标题 ``a.name_cn`` 裸奔。
@@ -29,10 +30,11 @@ HTML_TMPL = '''
       --text: #18191C;            /* 标题/正文（近黑）= 官方 --text1 */
       --text-secondary: #61666D;  /* 次要文字 = 官方 --text2 */
       --text-muted: #9499A0;      /* 辅助/弱化文字 = 官方 --text3 */
-      --primary: #00AEEC;         /* 品牌蓝（在看人数等数据强调）= 官方 --brand_blue */
-      --accent: #FF6699;          /* 品牌粉（头部/评分/标题竖条/序号）= 官方 --brand_pink / --Pi5 */
+      --primary: #00AEEC;         /* 品牌蓝（在看人数等数据强调/序号区背景）= 官方 --brand_blue */
+      --accent: #FF6699;          /* 品牌粉（头部/评分/标题竖条/tag 徽章）= 官方 --brand_pink / --Pi5 */
       --on-accent: #FFFFFF;       /* 品牌粉底上的文字 = 官方 --text_white */
-      --subtle: #F1F2F3;          /* 次面背景（封面占位底/序号区）= 官方 --graph_bg_regular */
+      --on-primary: #FFFFFF;      /* 品牌蓝底上的文字（序号区数字）= 官方 --text_white */
+      --subtle: #F1F2F3;          /* 次面背景（封面占位底）= 官方 --graph_bg_regular */
       --border: #E3E5E7;          /* 边框 = 官方 --line_regular / --Ga2 */
       --card-border: #E3E5E7;     /* 卡片边框 = 官方 --line_regular / --Ga2 */
       --accent-soft: #FFECF1;     /* 浅粉底 = 官方 --brand_pink_thin / --Pi1 */
@@ -130,15 +132,24 @@ HTML_TMPL = '''
     .anime-card .rank .rank-value { color: var(--primary); font-weight: 700; }
     .anime-card .rank .rank-missing { color: var(--text-muted); font-weight: 400; }
 
-    /* 序号区（右栏）：88px 定宽，subtle 底色 + 左边框分隔，品牌粉大号数字垂直居中 */
+    /* 序号区（右栏）：88px 定宽，品牌蓝底 + 左边框分隔，白色大号数字垂直居中 */
     .anime-card .index-col {
       width: 88px; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
-      background: var(--subtle); border-left: 1px solid var(--card-border);
+      background: var(--primary); border-left: 1px solid var(--primary);
     }
     .anime-card .index-num {
       font-family: var(--font-serif); font-size: 40px; font-weight: 700;
-      color: var(--accent); line-height: 1;
+      color: var(--on-primary); line-height: 1;
+    }
+    /* tag 行：flex 可换行，浅粉底胶囊徽章（品牌粉系，与评分强调一致） */
+    .anime-card .tags {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+    }
+    .anime-card .tag {
+      padding: 5px 10px; border-radius: 999px;
+      background: var(--accent-soft); color: var(--accent);
+      font-size: 12px; font-weight: 400; line-height: 1.4;
     }
 
     .footer {
@@ -183,6 +194,9 @@ HTML_TMPL = '''
             <span class="rank-value rank-missing">暂无排名</span>
             {% endif %}
           </div>
+          {% if a.tags %}
+          <div class="tags">{% for t in a.tags %}<span class="tag">{{ t | e }}</span>{% endfor %}</div>
+          {% endif %}
         </div>
         <div class="index-col">
           <div class="index-num">{{ a.index | e }}</div>
