@@ -6,6 +6,7 @@
   变量架构以便后续扩展）。
 - 思源宋体（标题）+ 思源黑体（正文）双字体回退链（规范 §2.1）。
 - 卡片圆角 8px、间距 4px 网格、规范阴影层级。
+- 三栏布局（760px）：左封面 150px | 中信息（标题/评分/在看/首播/排名）| 右序号区 88px。
 - 所有数据插值显式 ``| e`` 转义（不依赖 html_render 环境的 autoescape 开关）；
   ``or`` 优先级低于过滤器，必须加括号 ``(a.name_cn or a.name) | e``，否则
   仅 ``a.name`` 被转义而主标题 ``a.name_cn`` 裸奔。
@@ -19,7 +20,7 @@ HTML_TMPL = '''
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=660, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=760, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <style>
     /* Bilibili 设计系统变量（规范 §〇 :root 块，v1.4 官方色卡，浅色适配）：聊天卡片固定浅色，无深色模式 */
     :root {
@@ -29,9 +30,9 @@ HTML_TMPL = '''
       --text-secondary: #61666D;  /* 次要文字 = 官方 --text2 */
       --text-muted: #9499A0;      /* 辅助/弱化文字 = 官方 --text3 */
       --primary: #00AEEC;         /* 品牌蓝（在看人数等数据强调）= 官方 --brand_blue */
-      --accent: #FF6699;          /* 品牌粉（头部/评分/标题竖条）= 官方 --brand_pink / --Pi5 */
+      --accent: #FF6699;          /* 品牌粉（头部/评分/标题竖条/序号）= 官方 --brand_pink / --Pi5 */
       --on-accent: #FFFFFF;       /* 品牌粉底上的文字 = 官方 --text_white */
-      --subtle: #F1F2F3;          /* 次面背景（封面占位底）= 官方 --graph_bg_regular */
+      --subtle: #F1F2F3;          /* 次面背景（封面占位底/序号区）= 官方 --graph_bg_regular */
       --border: #E3E5E7;          /* 边框 = 官方 --line_regular / --Ga2 */
       --card-border: #E3E5E7;     /* 卡片边框 = 官方 --line_regular / --Ga2 */
       --accent-soft: #FFECF1;     /* 浅粉底 = 官方 --brand_pink_thin / --Pi1 */
@@ -49,9 +50,9 @@ HTML_TMPL = '''
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    /* 660px 固定宽度契约，必须与 html_render 的 viewport_width 保持一致 */
+    /* 760px 固定宽度契约，必须与 html_render 的 viewport_width 保持一致 */
     html, body {
-      width: 660px; min-width: 660px; max-width: 660px;
+      width: 760px; min-width: 760px; max-width: 760px;
       background: var(--bg); color: var(--text);
       font-family: var(--font); font-size: 14px; line-height: 1.6;
       overflow-x: hidden;
@@ -122,6 +123,23 @@ HTML_TMPL = '''
     .anime-card .meta { margin-top: 14px; font-size: 17px; color: var(--text-secondary); line-height: 1.6; }
     .anime-card .meta .score { color: var(--accent); font-weight: 700; font-size: 22px; }
     .anime-card .meta .doing { color: var(--primary); font-weight: 700; }
+    /* 排名行：排名值用品牌蓝强调（官方 --brand_blue），未上榜时弱化灰 */
+    .anime-card .rank {
+      margin-top: 6px; font-size: 15px; color: var(--text-secondary); line-height: 1.6;
+    }
+    .anime-card .rank .rank-value { color: var(--primary); font-weight: 700; }
+    .anime-card .rank .rank-missing { color: var(--text-muted); font-weight: 400; }
+
+    /* 序号区（右栏）：88px 定宽，subtle 底色 + 左边框分隔，品牌粉大号数字垂直居中 */
+    .anime-card .index-col {
+      width: 88px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--subtle); border-left: 1px solid var(--card-border);
+    }
+    .anime-card .index-num {
+      font-family: var(--font-serif); font-size: 40px; font-weight: 700;
+      color: var(--accent); line-height: 1;
+    }
 
     .footer {
       text-align: center; padding: 16px 24px 20px;
@@ -157,6 +175,17 @@ HTML_TMPL = '''
             &nbsp;·&nbsp; 在看: <span class="doing">{{ a.doing | e }}</span>人
             &nbsp;·&nbsp; {{ a.air_date | e }}
           </div>
+          <div class="rank">
+            Bangumi 排名:
+            {% if a.rank %}
+            <span class="rank-value">#{{ a.rank | e }}</span>
+            {% else %}
+            <span class="rank-value rank-missing">暂无排名</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="index-col">
+          <div class="index-num">{{ a.index | e }}</div>
         </div>
       </div>
       {% endfor %}

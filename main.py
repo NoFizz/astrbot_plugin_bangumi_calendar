@@ -402,7 +402,7 @@ class BangumiCalendarPlugin(Star):
                 "type": "png",
                 "full_page": True,
                 "timeout": 60000,
-                "viewport_width": 660,
+                "viewport_width": 760,
                 "viewport_height": 800,
                 "device_scale_factor_level": "high",
             }

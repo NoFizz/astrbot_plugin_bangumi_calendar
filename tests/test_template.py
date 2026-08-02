@@ -1,4 +1,4 @@
-"""HTML_TMPL 模板回归测试：字段契约、660px 宽度契约、Jinja2 注入转义。
+"""HTML_TMPL 模板回归测试：字段契约、760px 宽度契约、三栏结构、Jinja2 注入转义。
 
 测试用系统 Python 的 jinja2 直接渲染 ``card.HTML_TMPL``（显式关闭 autoescape，
 验证模板自带 ``| e`` 转义而不依赖渲染环境的自动转义开关）。jinja2 仅测试环境依赖，
@@ -48,10 +48,12 @@ def _item(**overrides):
     item = {
         "name": "Sousou no Frieren",
         "name_cn": "葬送的芙莉莲",
+        "index": 1,
         "score": 9.3,
         "doing": 12034,
         "air_date": "2023-09-29",
         "cover": "",
+        "rank": None,
     }
     item.update(overrides)
     return item
@@ -114,10 +116,10 @@ class TestEscaping:
 class TestContract:
     """模板契约：字段、宽度、功能保留。"""
 
-    def test_keeps_660px_width(self):
-        """Given HTML_TMPL 源码，Then 保留 660px 视口与文档宽度契约。"""
-        assert 'width=660' in HTML_TMPL
-        assert 'width: 660px' in HTML_TMPL
+    def test_keeps_760px_width(self):
+        """Given HTML_TMPL 源码，Then 保留 760px 视口与文档宽度契约。"""
+        assert 'width=760' in HTML_TMPL
+        assert 'width: 760px' in HTML_TMPL
 
     def test_renders_all_contract_fields(self):
         """Given 契约完整数据，When 渲染，Then 各字段均出现在输出中。"""
@@ -151,6 +153,8 @@ class TestContract:
         assert "{{ a.name | e }}" in HTML_TMPL
         assert "{{ a.cover | e }}" in HTML_TMPL
         assert "{{ a.air_date | e }}" in HTML_TMPL
+        assert "{{ a.index | e }}" in HTML_TMPL
+        assert "{{ a.rank | e }}" in HTML_TMPL
         assert "{{ date | e }}" in HTML_TMPL
         assert "{{ weekday | e }}" in HTML_TMPL
 
@@ -162,3 +166,34 @@ class TestContract:
         assert "在看" in HTML_TMPL
         assert "air_date" in HTML_TMPL
         assert "a.name_cn and a.name and a.name_cn != a.name" in HTML_TMPL
+
+    def test_renders_index_numbers_in_order(self):
+        """Given items 带递增 index，When 渲染，Then 序号区输出对应数字。"""
+        html = _render([_item(index=1), _item(name="Kusuriya no Hitorigoto", name_cn="药屋少女的呢喃", index=2)])
+
+        assert '<div class="index-num">1</div>' in html
+        assert '<div class="index-num">2</div>' in html
+
+    def test_renders_rank_value_when_present(self):
+        """Given rank 有值，When 渲染，Then 输出 #N 且不出现占位文案。"""
+        html = _render([_item(rank=9565)])
+
+        assert "#9565" in html
+        assert "暂无排名" not in html
+
+    @pytest.mark.parametrize("rank", [None, 0])
+    def test_renders_no_rank_placeholder(self, rank):
+        """Given rank 缺失或为 0（未上榜），When 渲染，Then 显示「暂无排名」。"""
+        html = _render([_item(rank=rank)])
+
+        assert "暂无排名" in html
+
+    def test_three_column_structure(self):
+        """Given 完整数据（有图/无图各一条），When 渲染，Then 封面/信息/序号区三栏齐全。"""
+        html = _render([_item(cover="data:image/jpeg;base64,AAAA"), _item(index=2)])
+
+        assert 'class="cover"' in html  # 左栏：封面（有图时 img.cover）
+        assert 'class="cover-placeholder"' in html  # 左栏：无图占位
+        assert 'class="info"' in html  # 中栏：番剧信息
+        assert 'class="index-col"' in html  # 右栏：今日序号区
+        assert "Bangumi 排名" in html  # 中栏含排名行
