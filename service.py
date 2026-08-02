@@ -148,20 +148,22 @@ async def fetch_calendar(config_retries: int, proxy: str | None) -> list[dict] |
     return None
 
 
-async def fetch_ranks(items: list[dict], proxy: str | None) -> dict[int, int | None]:
-    """并发获取番剧的 Bangumi 全站排名（``/v0/subjects/{id}`` 的 ``rating.rank``）。
+async def fetch_subject_details(items: list[dict], proxy: str | None) -> dict[int, tuple[int | None, list[dict]]]:
+    """并发获取番剧条目的全站排名与官方标签（``/v0/subjects/{id}`` 的 ``rating.rank`` 与 ``tags``）。
 
-    单请求超时 10s、信号量限流（与封面下载共用 ``_DOWNLOAD_SEM_LIMIT``）；
-    单项失败只记 warning 并降级为 None，不影响其他项与整体调用。
+    一次请求同时取回排名与标签（由原 ``fetch_ranks`` 扩展而来）；单请求超时 10s、
+    信号量限流（与封面下载共用 ``_DOWNLOAD_SEM_LIMIT``）；单项失败只记 warning
+    并降级为 ``(None, [])``，不影响其他项与整体调用。
 
     Args:
         items: 番剧条目列表（含整数 id）。
         proxy: 代理地址，None 表示直连。
 
     Returns:
-        dict[int, int | None]: subject_id → 全站排名；rank 缺失/为 0/请求失败为 None。
+        dict[int, tuple[int | None, list[dict]]]: subject_id → (全站排名, 原始标签列表)；
+        rank 缺失/为 0/请求失败为 None，tags 缺失/类型异常/请求失败为空列表。
     """
-    result: dict[int, int | None] = {}
+    result: dict[int, tuple[int | None, list[dict]]] = {}
     sem = asyncio.Semaphore(_DOWNLOAD_SEM_LIMIT)
 
     async def _fetch(client: httpx.AsyncClient, anime_id: int):
@@ -170,19 +172,24 @@ async def fetch_ranks(items: list[dict], proxy: str | None) -> dict[int, int | N
             async with sem:
                 resp = await client.get(f"{BANGUMI_SUBJECTS_URL}/{anime_id}", timeout=10)
                 if resp.status_code != 200:
-                    logger.warning(f"[Bangumi日历] 获取排名返回状态码 {resp.status_code} (id={anime_id})")
-                    return anime_id, None
-                rating = resp.json().get("rating") or {}
+                    logger.warning(f"[Bangumi日历] 获取条目详情返回状态码 {resp.status_code} (id={anime_id})")
+                    return anime_id, (None, [])
+                body = resp.json()
+                rating = body.get("rating") or {}
                 # rank 为 0 表示未上榜，与缺失同样映射为 None
-                return anime_id, rating.get("rank") or None
+                rank = rating.get("rank") or None
+                tags = body.get("tags") or []
+                if not isinstance(tags, list):
+                    tags = []
+                return anime_id, (rank, tags)
         except Exception as e:
-            logger.warning(f"[Bangumi日历] 获取排名失败 {anime_id}: {type(e).__name__}: {e}")
-            return anime_id, None
+            logger.warning(f"[Bangumi日历] 获取条目详情失败 {anime_id}: {type(e).__name__}: {e}")
+            return anime_id, (None, [])
 
     ids = [item.get("id") for item in items if isinstance(item.get("id"), int)]
     async with httpx.AsyncClient(headers=BANGUMI_HEADERS, timeout=15, follow_redirects=True, proxy=proxy) as client:
-        for anime_id, rank in await asyncio.gather(*(_fetch(client, aid) for aid in ids)):
-            result[anime_id] = rank
+        for anime_id, details in await asyncio.gather(*(_fetch(client, aid) for aid in ids)):
+            result[anime_id] = details
     return result
 
 

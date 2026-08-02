@@ -1,5 +1,8 @@
-"""service.fetch_ranks 单元测试：并发获取 Bangumi 全站排名的正确性与降级。
+"""service.fetch_subject_details 单元测试：并发获取全站排名与官方标签的正确性与降级。
 
+fetch_ranks 扩展为一次请求同时取回 ``/v0/subjects/{id}`` 的 ``rating.rank`` 与
+``tags``，返回结构由 ``dict[int, int | None]`` 改为
+``dict[int, tuple[int | None, list[dict]]]``（对应原 8 个测试已适配新结构）。
 所有测试 hermetic：通过替换 ``httpx.AsyncClient`` 为假客户端，不发起真实网络请求。
 """
 
@@ -46,8 +49,8 @@ def _item(anime_id):
     return {"id": anime_id}
 
 
-class TestFetchRanks:
-    """``fetch_ranks``：成功提取、0/缺失视为未上榜、失败降级为 None。"""
+class TestFetchSubjectDetails:
+    """``fetch_subject_details``：rank 与 tags 同时提取、缺失降级、失败不崩整体。"""
 
     @staticmethod
     def _install_fake_client(monkeypatch, responses=None, exc_by_url=None):
@@ -86,53 +89,79 @@ class TestFetchRanks:
         monkeypatch.setattr(service_mod.httpx, "AsyncClient", FakeClient)
         return state
 
-    def test_returns_rank_for_each_subject(self, monkeypatch):
-        """Given 两个条目各有排名，When 并发获取，Then 返回 id → rank 映射且走 v0/subjects。"""
+    def test_returns_rank_and_tags_for_each_subject(self, monkeypatch):
+        """Given 两个条目各有排名与标签，When 获取，Then 返回 id → (rank, tags) 且走 v0/subjects。"""
         responses = {
-            f"{_SUBJECTS_URL}/42": _RankResponse(json_body={"rating": {"rank": 9565}}),
-            f"{_SUBJECTS_URL}/7": _RankResponse(json_body={"rating": {"rank": 1234}}),
+            f"{_SUBJECTS_URL}/42": _RankResponse(
+                json_body={"rating": {"rank": 9565}, "tags": [{"name": "科幻", "count": 2300}]}
+            ),
+            f"{_SUBJECTS_URL}/7": _RankResponse(
+                json_body={"rating": {"rank": 1234}, "tags": [{"name": "TV", "count": 1314}]}
+            ),
         }
         state = self._install_fake_client(monkeypatch, responses)
-        result = asyncio.run(service_mod.fetch_ranks([_item(42), _item(7)], None))
-        assert result == {42: 9565, 7: 1234}
+        result = asyncio.run(service_mod.fetch_subject_details([_item(42), _item(7)], None))
+        assert result == {
+            42: (9565, [{"name": "科幻", "count": 2300}]),
+            7: (1234, [{"name": "TV", "count": 1314}]),
+        }
         assert set(state["calls"]) == {f"{_SUBJECTS_URL}/42", f"{_SUBJECTS_URL}/7"}
 
     def test_rank_zero_becomes_none(self, monkeypatch):
-        """Given rank 为 0（未上榜），When 获取，Then 映射为 None。"""
+        """Given rank 为 0（未上榜），When 获取，Then 映射为 None 且 tags 为空列表。"""
         state = self._install_fake_client(
             monkeypatch, {f"{_SUBJECTS_URL}/42": _RankResponse(json_body={"rating": {"rank": 0}})}
         )
-        assert asyncio.run(service_mod.fetch_ranks([_item(42)], None)) == {42: None}
+        assert asyncio.run(service_mod.fetch_subject_details([_item(42)], None)) == {42: (None, [])}
         assert state["calls"] == [f"{_SUBJECTS_URL}/42"]
 
     def test_missing_rating_becomes_none(self, monkeypatch):
-        """Given 响应无 rating 或无 rank 字段，When 获取，Then 映射为 None。"""
+        """Given 响应无 rating 或无 rank 字段，When 获取，Then 映射为 (None, [])。"""
         responses = {
             f"{_SUBJECTS_URL}/1": _RankResponse(json_body={"rating": {}}),
             f"{_SUBJECTS_URL}/2": _RankResponse(json_body={}),
         }
         self._install_fake_client(monkeypatch, responses)
-        assert asyncio.run(service_mod.fetch_ranks([_item(1), _item(2)], None)) == {1: None, 2: None}
+        result = asyncio.run(service_mod.fetch_subject_details([_item(1), _item(2)], None))
+        assert result == {1: (None, []), 2: (None, [])}
 
-    def test_non_200_returns_none(self, monkeypatch):
-        """Given 接口返回 404，When 获取，Then 该项为 None。"""
+    def test_tags_missing_becomes_empty_list(self, monkeypatch):
+        """Given 响应有 rank 但无 tags 字段，When 获取，Then tags 降级为空列表。"""
+        responses = {
+            f"{_SUBJECTS_URL}/42": _RankResponse(json_body={"rating": {"rank": 9565}}),
+        }
+        self._install_fake_client(monkeypatch, responses)
+        assert asyncio.run(service_mod.fetch_subject_details([_item(42)], None)) == {42: (9565, [])}
+
+    def test_malformed_tags_becomes_empty_list(self, monkeypatch):
+        """Given tags 字段类型异常（非列表），When 获取，Then tags 降级为空列表。"""
+        responses = {
+            f"{_SUBJECTS_URL}/42": _RankResponse(json_body={"rating": {"rank": 9565}, "tags": "oops"}),
+        }
+        self._install_fake_client(monkeypatch, responses)
+        assert asyncio.run(service_mod.fetch_subject_details([_item(42)], None)) == {42: (9565, [])}
+
+    def test_non_200_returns_none_and_empty_tags(self, monkeypatch):
+        """Given 接口返回 404，When 获取，Then 该项为 (None, [])。"""
         responses = {f"{_SUBJECTS_URL}/42": _RankResponse(status_code=404)}
         self._install_fake_client(monkeypatch, responses)
-        assert asyncio.run(service_mod.fetch_ranks([_item(42)], None)) == {42: None}
+        assert asyncio.run(service_mod.fetch_subject_details([_item(42)], None)) == {42: (None, [])}
 
     def test_request_error_degrades_to_none(self, monkeypatch):
-        """Given 某个条目请求抛 ConnectError，When 获取，Then 该项 None 且整体不崩。"""
-        responses = {f"{_SUBJECTS_URL}/7": _RankResponse(json_body={"rating": {"rank": 1234}})}
+        """Given 某个条目请求抛 ConnectError，When 获取，Then 该项 (None, []) 且整体不崩。"""
+        responses = {
+            f"{_SUBJECTS_URL}/7": _RankResponse(json_body={"rating": {"rank": 1234}}),
+        }
         exc_by_url = {f"{_SUBJECTS_URL}/42": httpx.ConnectError("refused")}
         self._install_fake_client(monkeypatch, responses, exc_by_url)
-        result = asyncio.run(service_mod.fetch_ranks([_item(42), _item(7)], None))
-        assert result == {42: None, 7: 1234}
+        result = asyncio.run(service_mod.fetch_subject_details([_item(42), _item(7)], None))
+        assert result == {42: (None, []), 7: (1234, [])}
 
     def test_client_instantiated_once(self, monkeypatch):
         """Given 多个条目，When 并发获取，Then AsyncClient 只实例化一次。"""
         responses = {f"{_SUBJECTS_URL}/{i}": _RankResponse(json_body={"rating": {"rank": i}}) for i in range(5)}
         state = self._install_fake_client(monkeypatch, responses)
-        asyncio.run(service_mod.fetch_ranks([_item(i) for i in range(5)], None))
+        asyncio.run(service_mod.fetch_subject_details([_item(i) for i in range(5)], None))
         assert state["instances"] == 1
 
     def test_sends_user_agent_header(self, monkeypatch):
@@ -140,7 +169,7 @@ class TestFetchRanks:
         state = self._install_fake_client(
             monkeypatch, {f"{_SUBJECTS_URL}/42": _RankResponse(json_body={"rating": {"rank": 1}})}
         )
-        asyncio.run(service_mod.fetch_ranks([_item(42)], None))
+        asyncio.run(service_mod.fetch_subject_details([_item(42)], None))
         assert "User-Agent" in state["kwargs"]["headers"]
         assert state["kwargs"]["headers"]["User-Agent"]
 
@@ -166,6 +195,6 @@ class TestFetchRanks:
                 return _RankResponse(json_body={"rating": {"rank": 1}})
 
         monkeypatch.setattr(service_mod.httpx, "AsyncClient", FakeClient)
-        result = asyncio.run(service_mod.fetch_ranks([_item(i) for i in range(12)], None))
+        result = asyncio.run(service_mod.fetch_subject_details([_item(i) for i in range(12)], None))
         assert len(result) == 12
         assert state["max"] == 5  # 信号量将并发钳制在限制值

@@ -24,9 +24,10 @@ from .parser import (
     get_today_items,
     parse_push_time,
     safe_anime_id,
+    select_tags,
     sort_items,
 )
-from .service import cleanup_old_covers, download_covers, fetch_calendar, fetch_ranks
+from .service import cleanup_old_covers, download_covers, fetch_calendar, fetch_subject_details
 
 __all__ = ["httpx"]
 
@@ -319,25 +320,26 @@ class BangumiCalendarPlugin(Star):
         """下载封面图，支持本地缓存。返回 {原始URL: data URI} 映射"""
         return await download_covers(items, self._get_proxy())
 
-    async def _fetch_ranks(self, items: list[dict]) -> dict[int, int | None]:
-        """并发获取番剧的 Bangumi 全站排名，结果按实例内存缓存。
+    async def _fetch_subject_details(self, items: list[dict]) -> dict[int, tuple[int | None, list[dict]]]:
+        """并发获取番剧的 Bangumi 条目详情（全站排名 + 官方标签），结果按实例内存缓存。
 
         同一天内「今日」命令/定时推送/手动推送会多次渲染，缓存避免对同一批
-        番剧重复请求（排名变化不敏感，插件生命周期内有效即可，无需落盘）。
+        番剧重复请求（排名/标签变化不敏感，插件生命周期内有效即可，无需落盘）。
 
         Args:
             items: 番剧条目列表。
 
         Returns:
-            dict[int, int | None]: subject_id → 全站排名；未上榜或获取失败为 None。
+            dict[int, tuple[int | None, list[dict]]]: subject_id → (全站排名, 原始标签列表)；
+            未上榜或获取失败为 (None, [])。
         """
         # 懒初始化：测试用 object.__new__ 绕过 __init__，该属性可能尚未创建
-        cache = getattr(self, "_rank_cache", None)
+        cache = getattr(self, "_subject_cache", None)
         if cache is None:
-            cache = self._rank_cache = {}
+            cache = self._subject_cache = {}
         missing = {it.get("id") for it in items if isinstance(it.get("id"), int)} - set(cache)
         if missing:
-            fresh = await fetch_ranks([{"id": aid} for aid in missing], self._get_proxy())
+            fresh = await fetch_subject_details([{"id": aid} for aid in missing], self._get_proxy())
             cache.update(fresh)
         return cache
 
@@ -393,10 +395,13 @@ class BangumiCalendarPlugin(Star):
                 else:
                     item["cover"] = ""
 
-            # 并发获取全站排名（失败项已降级为 None），随后逐项写入模板数据
-            rank_map = await self._fetch_ranks(items)
+            # 并发获取条目详情（排名 + 标签，失败项已降级为 (None, [])），
+            # 排名直接写入模板，标签经 select_tags 筛选后写入
+            subject_map = await self._fetch_subject_details(items)
             for item, anime in zip(template_data["items"], items):
-                item["rank"] = rank_map.get(anime.get("id"))
+                rank, tags = subject_map.get(anime.get("id"), (None, []))
+                item["rank"] = rank
+                item["tags"] = select_tags(tags)
 
             options = {
                 "type": "png",

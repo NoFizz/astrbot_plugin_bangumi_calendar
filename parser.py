@@ -126,3 +126,103 @@ def clean_umos(raw) -> list[str]:
     """
     cleaned = [str(u).strip() for u in raw if str(u).strip()]
     return list(dict.fromkeys(cleaned))
+
+
+# 来源类型 tag：规范名集合 + 常见简写映射（先归一化再匹配）
+_SOURCE_ALIASES = {"漫改": "漫画改"}
+_SOURCE_TAGS = {"原创", "漫画改", "小说改", "游戏改", "动画改", "影视改"}
+# 放送方式 tag：严格匹配，不做别名扩展
+_AIRING_TAGS = {"TV", "WEB", "OVA", "剧场版", "动态漫画"}
+# 作品题材 tag：白名单（用户指定全表），按 count 降序填充
+_GENRE_TAGS = {
+    "科幻",
+    "喜剧",
+    "同人",
+    "百合",
+    "校园",
+    "惊悚",
+    "后宫",
+    "机战",
+    "悬疑",
+    "恋爱",
+    "奇幻",
+    "推理",
+    "运动",
+    "耽美",
+    "音乐",
+    "战斗",
+    "冒险",
+    "萌系",
+    "穿越",
+    "玄幻",
+    "乙女",
+    "恐怖",
+    "历史",
+    "日常",
+    "剧情",
+    "武侠",
+    "美食",
+    "职场",
+}
+# 国家/地区 tag：一律排除，不进入任何位（与题材白名单无交集，双保险防误入）
+_COUNTRY_TAGS = {"日本", "国产", "中国", "美国", "韩国", "英国", "法国", "德国"}
+
+
+def _normalize_tag_name(name: str) -> str:
+    """把来源 tag 的常见简写归一化为规范名，其余原样返回。
+
+    Args:
+        name: 原始 tag 名。
+
+    Returns:
+        str: 规范名（如 漫改→漫画改）。
+    """
+    return _SOURCE_ALIASES.get(name, name)
+
+
+def select_tags(raw_tags: list[dict] | None, max_count: int = 5) -> list[str]:
+    """筛选番剧官方标签：来源 + 放送 + 题材，按添加人数 count 降序。
+
+    排位固定为 来源(若有) → 放送(若有) → 题材(按 count 降序)，不做二次排序；
+    某类缺失就跳过对应位，不强制凑满，总长 ≤ max_count。同名（归一化后）tag
+    的 count 合并相加。国家/地区与白名单外的杂项 tag 一律跳过。
+
+    Args:
+        raw_tags: Bangumi ``/v0/subjects/{id}`` 返回的 tags 列表
+            （``[{name, count}, ...]``，count 为添加人数）。
+        max_count: 最多返回的 tag 数，默认 5；小于等于 0 返回空列表。
+
+    Returns:
+        list[str]: 筛选后的 tag 名列表；无可用 tag 时为空列表。
+    """
+    if max_count <= 0:
+        return []
+    counts: dict[str, int] = {}
+    for tag in raw_tags or []:
+        if not isinstance(tag, dict):
+            continue
+        name = _normalize_tag_name((tag.get("name") or "").strip())
+        count = tag.get("count")
+        if not name or not isinstance(count, int):
+            continue
+        counts[name] = counts.get(name, 0) + count
+    ranked = sorted(counts.items(), key=lambda kv: kv[1], reverse=True)
+
+    selected: list[str] = []
+    # 第一位：来源类型（count 最大者）
+    for name, _ in ranked:
+        if name in _SOURCE_TAGS:
+            selected.append(name)
+            break
+    # 第二位：放送方式（count 最大者）
+    for name, _ in ranked:
+        if name in _AIRING_TAGS:
+            selected.append(name)
+            break
+    # 第三位起：题材白名单按 count 降序填充至 max_count
+    for name, _ in ranked:
+        if len(selected) >= max_count:
+            break
+        if name in _GENRE_TAGS and name not in _COUNTRY_TAGS:
+            selected.append(name)
+    return selected
