@@ -34,7 +34,7 @@ HTML_TMPL = '''
     }
     /* Bilibili 设计系统变量（规范 §〇 :root 块，v1.4 官方色卡，浅色适配）：聊天卡片固定浅色，无深色模式 */
     :root {
-      --bg: #FFFFFF;              /* 页面背景 = 官方 --bg1 */
+      --bg: #F6F7F8;              /* 页面背景（淡灰）= 官方 --bg2（卡片浮于灰底更有层次） */
       --card-bg: #FFFFFF;         /* 卡片背景 = 官方 --bg1_float */
       --text: #18191C;            /* 标题/正文（近黑）= 官方 --text1 */
       --text-secondary: #61666D;  /* 次要文字 = 官方 --text2 */
@@ -50,7 +50,7 @@ HTML_TMPL = '''
       --radius-sm: 4px;           /* 操作元素圆角 */
       --radius: 6px;              /* toast 圆角 */
       --radius-lg: 8px;           /* 大卡片圆角 */
-      --shadow: 0 1px 0 rgba(0, 0, 0, 0.04);        /* 卡片默认投影 */
+      --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);        /* 卡片浮雕投影（淡灰底上明显但不突兀） */
       --shadow-hover: 0 3px 6px rgba(0, 0, 0, 0.12); /* 浮层投影 */
       /* 全插件统一微软雅黑（用户指定），回退到系统无衬线字体 */
       --font: "Microsoft YaHei", "微软雅黑", "PingFang SC", "Noto Sans SC", sans-serif;
@@ -65,12 +65,14 @@ HTML_TMPL = '''
       overflow-x: hidden;
     }
 
-    /* 头部：品牌粉渐变（官方色阶 Pi5→Pi4→Pi3），底部透明白渐变指示条 */
+    /* 头部：品牌粉渐变浮动胶囊（官方色阶 Pi5→Pi4→Pi3），左右留白、全圆角、带投影，悬浮于灰底 */
     .header {
       position: relative; text-align: center;
-      padding: 32px 24px 28px;
+      margin: 16px 12px 0;
+      padding: 28px 24px 24px;
       background: linear-gradient(135deg, var(--accent) 0%, #FF8CB0 60%, #FFB3CA 100%);
-      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      border-radius: 24px;
+      box-shadow: 0 4px 12px rgba(251, 114, 153, 0.28);
     }
     .header::after {
       content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px;
@@ -86,9 +88,8 @@ HTML_TMPL = '''
     .container {
       background: var(--bg);
       border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-      box-shadow: var(--shadow);
     }
-    .body { padding: 20px 24px 24px; }
+    .body { padding: 16px 24px 12px; }
 
     /* 番剧卡片：白底 + 1px 边框 + 8px 圆角 + 默认投影（规范 §4/§5） */
     .anime-card {
