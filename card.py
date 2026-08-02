@@ -34,8 +34,6 @@ HTML_TMPL = '''
       --accent: #FF6699;          /* 品牌粉（头部/评分/标题竖条/tag 徽章）= 官方 --brand_pink / --Pi5 */
       --on-accent: #FFFFFF;       /* 品牌粉底上的文字 = 官方 --text_white */
       --on-primary: #FFFFFF;      /* 品牌蓝底上的文字 = 官方 --text_white */
-      --index-bg: #BFEDFA;        /* 序号区淡蓝底 = 官方 --Lb2（比品牌蓝浅，与白/灰背景和谐） */
-      --index-num: #FFFFFF;       /* 序号数字白色 = 官方 --text_white（浅蓝底上的可读大号数字） */
       --subtle: #F1F2F3;          /* 次面背景（封面占位底）= 官方 --graph_bg_regular */
       --border: #E3E5E7;          /* 边框 = 官方 --line_regular / --Ga2 */
       --card-border: #E3E5E7;     /* 卡片边框 = 官方 --line_regular / --Ga2 */
@@ -137,15 +135,15 @@ HTML_TMPL = '''
     .anime-card .meta .score { color: var(--accent); font-weight: 700; font-size: 22px; }
     .anime-card .meta .doing { color: var(--primary); font-weight: 700; }
 
-    /* 序号区（右栏）：88px 定宽，淡蓝底（官方 --Lb2）+ 左边框分隔，白色大号数字垂直居中 */
+    /* 序号区（右栏）：88px 定宽，白底与信息区一致，浅灰左边框分隔，品牌粉大号数字垂直居中 */
     .anime-card .index-col {
       width: 88px; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
-      background: var(--index-bg); border-left: 1px solid var(--index-bg);
+      background: var(--card-bg); border-left: 1px solid var(--card-border);
     }
     .anime-card .index-num {
       font-family: var(--font-serif); font-size: 40px; font-weight: 700;
-      color: var(--index-num); line-height: 1;
+      color: var(--accent); line-height: 1;
     }
     /* tag 行：flex 可换行，浅粉底胶囊徽章（品牌粉系，与评分强调一致） */
     .anime-card .tags {

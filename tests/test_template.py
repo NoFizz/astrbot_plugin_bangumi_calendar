@@ -245,15 +245,13 @@ class TestTagsRow:
         assert "var(--accent-soft)" in HTML_TMPL
 
 
-class TestIndexColumnBlue:
-    """序号区淡蓝底 + 白色数字：背景 --index-bg（官方 Lb2）、数字 --index-num 白色。"""
+class TestIndexColumn:
+    """序号区：白底与信息区一致、浅灰左边框分隔、品牌粉数字。"""
 
-    def test_index_col_uses_light_blue_background(self):
-        """Given HTML_TMPL 源码，Then 序号区背景为淡蓝、数字为白色且变量已定义。"""
-        assert "background: var(--index-bg);" in HTML_TMPL
-        assert "color: var(--index-num);" in HTML_TMPL
-        assert "--index-bg: #BFEDFA;" in HTML_TMPL
-        assert "--index-num: #FFFFFF;" in HTML_TMPL
+    def test_index_col_uses_card_background_and_pink_number(self):
+        """Given HTML_TMPL 源码，Then 序号区背景与信息区同色（--card-bg）、数字为品牌粉（--accent）、浅灰分隔线。"""
+        assert "background: var(--card-bg); border-left: 1px solid var(--card-border);" in HTML_TMPL
+        assert "color: var(--accent);" in HTML_TMPL
 
     def test_index_col_keeps_88px_width_and_centered(self):
         """Given HTML_TMPL 源码，Then 序号区保留 88px 定宽与垂直居中布局。"""
