@@ -5,4 +5,4 @@ version: 1.1.0
 author: NoFizz
 repo: https://github.com/NoFizz/astrbot_plugin_bangumi_calendar
 astrbot_version: ">=4.26.0"
-support_platforms: ["qq", "wechat", "telegram", "discord", "kaiheila", "feishu", "webchat"]
+support_platforms: ["aiocqhttp"]
