@@ -6,7 +6,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-1.0.0-blue?style=flat" alt="version">
-  <img src="https://img.shields.io/badge/license-AGPL--3.0-green?style=flat" alt="license">
+  <img src="https://img.shields.io/badge/license-AGPL-3.0-green?style=flat" alt="license">
   <img src="https://img.shields.io/badge/python-3.10+-blue?style=flat" alt="python">
   <img src="https://img.shields.io/badge/AstrBot->=4.26.0-orange?style=flat" alt="AstrBot version">
 </p>
@@ -26,6 +26,12 @@
 - 推送时间、推送数量、排序方式可配置
 - 封面图本地缓存（30 天自动清理），减少重复下载
 - 支持配置 HTTP/SOCKS5 代理，兼容环境变量回退
+
+## 截图 (Screenshots)
+
+![推送卡片示例](./docs/screenshots/card.png)
+
+TODO: 截图将由后续任务生成
 
 ## 安装
 
@@ -95,7 +101,7 @@
 
 ## 依赖要求
 
-- Python >= 3.8
+- Python >= 3.10
 - AstrBot >= 4.26.0
 - httpx[socks]
 
@@ -112,6 +118,36 @@
 - **网络**：所有 HTTP 请求使用 `httpx`，启用 `follow_redirects`，代理优先读取配置、回退到环境变量
 - **排序**：先对全部当日番剧按配置排序，再按 `max_items` 截断，确保"评分最高的 N 部"语义正确
 - **容错**：API 请求可配置重试次数（默认 3 次，线性退避），渲染/推送失败静默降级并记录日志
+
+## FAQ / 故障排查
+
+### Q1：推送时间配置没有生效？
+
+`push_time` 格式不合法（不是 `H:MM` 或 `HH:MM`）时，解析会失败并回退到默认时间 `07:00`。请检查配置值，例如 `7:00`、`07:00` 都是合法格式。
+
+### Q2：到点没有收到推送卡片？
+
+卡片发送依赖渲染环节，`html_render` 需要 AstrBot 的浏览器服务（Puppeteer / t2i）正常运行。渲染或发送失败时会记录日志并静默跳过本次推送，不会抛出异常；API 请求失败会按 `max_retries`（默认 3 次）自动重试。排查步骤：
+
+1. 在 WebUI 插件管理中确认插件已启用且无报错。
+2. 确认浏览器服务正常，可先在群里用 `/新番 今日` 手动触发一次。
+3. 查看 AstrBot 日志中本插件的渲染与推送错误记录。
+
+### Q3：封面缓存存在哪里？会一直增长吗？
+
+封面图缓存在插件目录的 `covers/` 下。缓存文件超过 30 天未被访问会自动清理，无需手动干预。
+
+### Q4：如何配置代理？
+
+在配置项 `proxy` 中填写代理地址，支持 `http://127.0.0.1:7897` 或 `socks5://127.0.0.1:1080`。留空时回退读取环境变量 `HTTP_PROXY` / `HTTPS_PROXY`，两者均未设置则使用直连。
+
+### Q5：为什么收到重复的推送？
+
+检查配置项 `umos` 中是否有重复的目标 UMO。同一 UMO 出现多次时会对同一群聊推送多次，删除重复项即可。
+
+### Q6：推送时间以什么时区为准？
+
+以服务器本地时间为准，即代码中 `datetime.now()` 所在时区，不受客户端或用户时区影响。部署时请确认服务器时区设置正确。
 
 ## 许可证
 
