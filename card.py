@@ -131,7 +131,7 @@ HTML_TMPL = '''
     .anime-card .meta .score { color: var(--accent); font-weight: 700; font-size: 22px; }
     .anime-card .meta .doing { color: var(--primary); font-weight: 700; }
 
-    /* 序号区（左栏）：64px 定宽，白底与信息区一致，右侧浅灰分隔线，新宋体品牌粉大号数字垂直居中 */
+    /* 序号区（左栏）：64px 定宽，白底与信息区一致，右侧浅灰分隔线，品牌粉大号数字垂直居中 */
     .anime-card .index-col {
       width: 64px; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
