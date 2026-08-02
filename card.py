@@ -65,12 +65,12 @@ HTML_TMPL = '''
       overflow-x: hidden;
     }
 
-    /* 头部：品牌粉渐变浮动胶囊（官方色阶 Pi5→Pi4→Pi3），左右留白、全圆角、带投影，悬浮于灰底 */
+    /* 头部：品牌粉淡色纯色胶囊（官方 --Pi4 #FF8CB0，无渐变），左右留白、全圆角、带投影，悬浮于灰底 */
     .header {
       position: relative; text-align: center;
       margin: 16px 12px 0;
       padding: 28px 24px 24px;
-      background: linear-gradient(135deg, var(--accent) 0%, #FF8CB0 60%, #FFB3CA 100%);
+      background: #FF8CB0;
       border-radius: 24px;
       box-shadow: 0 4px 12px rgba(251, 114, 153, 0.28);
     }
@@ -160,7 +160,7 @@ HTML_TMPL = '''
     .footer {
       text-align: center; padding: 8px 24px 10px;
       font-size: 13px; color: var(--text-muted);
-      background: var(--card-bg);
+      background: var(--bg);
     }
     /* 作者署名：数据来源下方，居中，Birthstone 手写体 */
     .footer .credit {
