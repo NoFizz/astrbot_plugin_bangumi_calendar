@@ -364,6 +364,16 @@ class BangumiCalendarPlugin(Star):
         if not items:
             return None
 
+        # 先并发获取条目详情（rank + tags）：rank 是排序依据，必须在此注入
+        # items 的 rating.rank 之后再排序；获取失败项已降级为 (None, [])
+        subject_map = await self._fetch_subject_details(items)
+        for anime in items:
+            rank, _ = subject_map.get(anime.get("id"), (None, []))
+            rating = anime.get("rating")
+            if not isinstance(rating, dict):
+                rating = anime["rating"] = {}
+            rating["rank"] = rank
+
         items = self._sort_items(items)
         items = self._filter_items(items)
 
@@ -392,6 +402,7 @@ class BangumiCalendarPlugin(Star):
                     "name_cn": html_mod.unescape(anime.get("name_cn", "")),
                     "index": i + 1,
                     "score": rating.get("score", "暂无"),
+                    "rank": rating.get("rank"),
                     "doing": collection.get("doing", 0),
                     "air_date": anime.get("air_date", ""),
                     "cover": cover_url,
@@ -407,12 +418,9 @@ class BangumiCalendarPlugin(Star):
                 else:
                     item["cover"] = ""
 
-            # 并发获取条目详情（排名 + 标签，失败项已降级为 (None, [])），
-            # 排名直接写入模板，标签经 select_tags 筛选后写入
-            subject_map = await self._fetch_subject_details(items)
+            # 标签经 select_tags 筛选后写入（rank 已在排序前注入）
             for item, anime in zip(template_data["items"], items):
-                rank, tags = subject_map.get(anime.get("id"), (None, []))
-                item["rank"] = rank
+                _, tags = subject_map.get(anime.get("id"), (None, []))
                 item["tags"] = select_tags(tags)
 
             options = {

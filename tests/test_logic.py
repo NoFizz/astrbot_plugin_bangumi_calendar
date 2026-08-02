@@ -399,6 +399,8 @@ class TestRenderImage:
         )
         plugin._get_today_items = lambda calendar: calendar[0]["items"]
         plugin._download_covers = AsyncMock(return_value={})
+        # 详情桩：默认全无 rank（排序退化为评分序）；需要 rank 的测试单独覆盖
+        plugin._fetch_subject_details = AsyncMock(return_value={})
         plugin.html_render = AsyncMock(return_value="https://example.com/card.png")
         return plugin
 
@@ -419,6 +421,17 @@ class TestRenderImage:
         assert url == "https://example.com/card.png"
         assert template_data["count"] == 1
         assert [item["name"] for item in template_data["items"]] == ["B"]
+
+    def test_rank_injected_before_sorting(self, make_plugin):
+        """Given 详情桩返回 rank（C 有 rank 但评分低于 B），When 渲染，Then Rank 优先：C 排在 B 前。"""
+        plugin = self._plugin(make_plugin, max_items=0)
+        # 覆盖详情桩：C(id=3) 有 rank 2，A/B 无 rank
+        plugin._fetch_subject_details = AsyncMock(return_value={3: (2, [])})
+        url = asyncio.run(plugin._render_image())
+        template_data = plugin.html_render.call_args.args[1]
+        assert url == "https://example.com/card.png"
+        # 有 rank 的 C 排最前，无 rank 的按评分降序 B、A 随后
+        assert [item["name"] for item in template_data["items"]] == ["C", "B", "A"]
 
     def test_no_today_items_returns_none(self, make_plugin):
         """Given 当日无番剧，When 渲染，Then 返回 None。"""
