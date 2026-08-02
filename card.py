@@ -4,10 +4,10 @@
 - 品牌粉 #FF6699 渐变头部 + 品牌蓝 #00AEEC 数据强调；浅色专用（聊天卡片渲染为
   PNG，无深色模式，故不引入 ``[data-theme="dark"]`` 变量块，但保留 ``:root``
   变量架构以便后续扩展）。
-- 思源宋体（标题）+ 思源黑体（正文）双字体回退链（规范 §2.1）。
+- 全插件统一微软雅黑（用户指定），回退系统无衬线字体。
 - 卡片圆角 8px、间距 4px 网格、规范阴影层级。
-- 三栏布局（760px）：左封面 150px | 中信息（标题/评分/在看/首播/排名/tag 徽章）| 右序号区 88px
-  （品牌蓝底白字）。
+- 三栏布局（760px）：左序号区 88px（浅灰底品牌粉数字）| 中封面 150px | 右信息
+  （标题/评分/在看/首播/排名/tag 徽章）。
 - 所有数据插值显式 ``| e`` 转义（不依赖 html_render 环境的 autoescape 开关）；
   ``or`` 优先级低于过滤器，必须加括号 ``(a.name_cn or a.name) | e``，否则
   仅 ``a.name`` 被转义而主标题 ``a.name_cn`` 裸奔。
@@ -106,7 +106,7 @@ HTML_TMPL = '''
     .anime-card .title-row {
       display: flex; align-items: flex-start; gap: 8px;
     }
-    /* 标题：思源宋体 + 品牌粉 3px 竖条（规范 §2.2 卡片标题写法），最多两行 */
+    /* 标题：微软雅黑 + 品牌粉 3px 竖条，最多两行 */
     .anime-card .title {
       flex: 1; min-width: 0;
       font-family: var(--font); font-size: 24px; font-weight: 600;
