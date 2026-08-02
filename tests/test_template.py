@@ -203,14 +203,14 @@ class TestContract:
 
 
 class TestFooter:
-    """页脚：数据来源 + Made by NoFizz 作者署名。"""
+    """页脚：数据来源 + Presented by NoFizz 作者署名。"""
 
     def test_footer_has_data_source_and_credit(self):
-        """Given 模板源码，Then 页脚含数据来源与 Made by NoFizz 署名。"""
+        """Given 模板源码，Then 页脚含数据来源与 Presented by NoFizz 署名。"""
         html = _render([_item()])
 
         assert "数据来源: Bangumi · bangumi.tv" in html
-        assert '<div class="credit">Made by NoFizz</div>' in html
+        assert '<div class="credit">Presented by NoFizz</div>' in html
 
 
 class TestTagsRow:

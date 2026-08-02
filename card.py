@@ -206,7 +206,7 @@ HTML_TMPL = '''
     </div>
     <div class="footer">
       数据来源: Bangumi · bangumi.tv
-      <div class="credit">Made by NoFizz</div>
+      <div class="credit">Presented by NoFizz</div>
     </div>
   </div>
 </body>
