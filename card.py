@@ -1,7 +1,7 @@
 """HTML 卡片模板常量：Jinja2 语法，由 AstrBot 的 html_render 渲染为图片。
 
-设计规范：NoFizz-AstrBot 插件 UI 设计规范（Bilibili Web 设计系统 v1.3）。
-- 品牌粉 #FB7299 渐变头部 + 品牌蓝 #00AEEC 数据强调；浅色专用（聊天卡片渲染为
+设计规范：NoFizz-AstrBot 插件 UI 设计规范（Bilibili Web 设计系统 v1.4 官方色卡）。
+- 品牌粉 #FF6699 渐变头部 + 品牌蓝 #00AEEC 数据强调；浅色专用（聊天卡片渲染为
   PNG，无深色模式，故不引入 ``[data-theme="dark"]`` 变量块，但保留 ``:root``
   变量架构以便后续扩展）。
 - 思源宋体（标题）+ 思源黑体（正文）双字体回退链（规范 §2.1）。
@@ -21,20 +21,20 @@ HTML_TMPL = '''
   <meta charset="UTF-8">
   <meta name="viewport" content="width=660, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <style>
-    /* Bilibili 设计系统变量（规范 :root 块，浅色适配）：聊天卡片固定浅色，无深色模式 */
+    /* Bilibili 设计系统变量（规范 §〇 :root 块，v1.4 官方色卡，浅色适配）：聊天卡片固定浅色，无深色模式 */
     :root {
-      --bg: #F5F6F8;              /* 页面背景（B站极浅灰） */
-      --card-bg: #FFFFFF;         /* 卡片背景 */
-      --text: #18191C;            /* 标题/正文（近黑） */
-      --text-secondary: #61666D;  /* 次要文字 */
-      --text-muted: #9499A0;      /* 辅助/弱化文字 */
-      --primary: #00AEEC;         /* 品牌蓝（在看人数等数据强调） */
-      --accent: #FB7299;          /* 品牌粉（头部/评分/标题竖条） */
-      --on-accent: #FFFFFF;       /* 品牌粉底上的文字 */
-      --subtle: #F1F2F3;          /* 次面背景（封面占位底） */
-      --border: #E3E5E7;          /* 边框 */
-      --card-border: #E3E5E7;     /* 卡片边框 */
-      --accent-soft: #FFE9F0;     /* 浅粉底 */
+      --bg: #FFFFFF;              /* 页面背景 = 官方 --bg1 */
+      --card-bg: #FFFFFF;         /* 卡片背景 = 官方 --bg1_float */
+      --text: #18191C;            /* 标题/正文（近黑）= 官方 --text1 */
+      --text-secondary: #61666D;  /* 次要文字 = 官方 --text2 */
+      --text-muted: #9499A0;      /* 辅助/弱化文字 = 官方 --text3 */
+      --primary: #00AEEC;         /* 品牌蓝（在看人数等数据强调）= 官方 --brand_blue */
+      --accent: #FF6699;          /* 品牌粉（头部/评分/标题竖条）= 官方 --brand_pink / --Pi5 */
+      --on-accent: #FFFFFF;       /* 品牌粉底上的文字 = 官方 --text_white */
+      --subtle: #F1F2F3;          /* 次面背景（封面占位底）= 官方 --graph_bg_regular */
+      --border: #E3E5E7;          /* 边框 = 官方 --line_regular / --Ga2 */
+      --card-border: #E3E5E7;     /* 卡片边框 = 官方 --line_regular / --Ga2 */
+      --accent-soft: #FFECF1;     /* 浅粉底 = 官方 --brand_pink_thin / --Pi1 */
       --radius-sm: 4px;           /* 操作元素圆角 */
       --radius: 6px;              /* toast 圆角 */
       --radius-lg: 8px;           /* 大卡片圆角 */
@@ -57,14 +57,14 @@ HTML_TMPL = '''
       overflow-x: hidden;
     }
 
-    /* 头部：品牌粉渐变 + 白色高光圆斑，底部透明白渐变指示条 */
+    /* 头部：品牌粉渐变（官方色阶 Pi5→Pi4→Pi3）+ 白色高光圆斑，底部透明白渐变指示条 */
     .header {
       position: relative; text-align: center;
       padding: 32px 24px 28px;
       background:
         radial-gradient(circle at 12% 130%, rgba(255, 255, 255, 0.16), transparent 42%),
         radial-gradient(circle at 90% -30%, rgba(255, 255, 255, 0.14), transparent 40%),
-        linear-gradient(135deg, #FB7299 0%, #FF8FAD 55%, #FFA8BF 100%);
+        linear-gradient(135deg, #FF6699 0%, #FF8CB0 60%, #FFB3CA 100%);
       border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     }
     .header::after {
