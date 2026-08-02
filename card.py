@@ -65,11 +65,11 @@ HTML_TMPL = '''
       overflow-x: hidden;
     }
 
-    /* 头部：品牌粉纯色（官方 --brand_pink #FF6699，无渐变），底部透明白渐变指示条 */
+    /* 头部：品牌粉渐变（官方色阶 Pi5→Pi4→Pi3），底部透明白渐变指示条 */
     .header {
       position: relative; text-align: center;
       padding: 32px 24px 28px;
-      background: var(--accent);
+      background: linear-gradient(135deg, var(--accent) 0%, #FF8CB0 60%, #FFB3CA 100%);
       border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     }
     .header::after {
@@ -161,9 +161,9 @@ HTML_TMPL = '''
     }
 
     .footer {
-      text-align: center; padding: 16px 24px 20px;
+      text-align: center; padding: 8px 24px 10px;
       font-size: 13px; color: var(--text-muted);
-      background: var(--card-bg); border-top: 1px solid var(--card-border);
+      background: var(--card-bg);
     }
     /* 作者署名：数据来源下方，居中，Birthstone 手写体 */
     .footer .credit {
