@@ -35,7 +35,7 @@ HTML_TMPL = '''
       --on-accent: #FFFFFF;       /* 品牌粉底上的文字 = 官方 --text_white */
       --on-primary: #FFFFFF;      /* 品牌蓝底上的文字 = 官方 --text_white */
       --index-bg: #BFEDFA;        /* 序号区淡蓝底 = 官方 --Lb2（比品牌蓝浅，与白/灰背景和谐） */
-      --index-num: #008AC5;       /* 序号数字深蓝 = 官方 --v_brand_blue_active / --Lb6（保证浅蓝底上的对比度） */
+      --index-num: #FFFFFF;       /* 序号数字白色 = 官方 --text_white（浅蓝底上的可读大号数字） */
       --subtle: #F1F2F3;          /* 次面背景（封面占位底）= 官方 --graph_bg_regular */
       --border: #E3E5E7;          /* 边框 = 官方 --line_regular / --Ga2 */
       --card-border: #E3E5E7;     /* 卡片边框 = 官方 --line_regular / --Ga2 */
@@ -108,12 +108,24 @@ HTML_TMPL = '''
       flex: 1; min-width: 0; padding: 16px 20px;
       display: flex; flex-direction: column; justify-content: center;
     }
+    /* 标题行：番剧名（左，flex 占满）+ rank 胶囊（右） */
+    .anime-card .title-row {
+      display: flex; align-items: flex-start; gap: 8px;
+    }
     /* 标题：思源宋体 + 品牌粉 3px 竖条（规范 §2.2 卡片标题写法），最多两行 */
     .anime-card .title {
+      flex: 1; min-width: 0;
       font-family: var(--font-serif); font-size: 24px; font-weight: 600;
       color: var(--text); line-height: 1.3; word-break: break-all;
       border-left: 3px solid var(--accent); padding-left: 10px;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    /* rank 胶囊：品牌蓝底白字，位于番剧名末尾右侧 */
+    .anime-card .rank-badge {
+      flex-shrink: 0; margin-top: 2px;
+      padding: 3px 10px; border-radius: 999px;
+      background: var(--primary); color: var(--on-primary);
+      font-size: 12px; font-weight: 600; line-height: 1.4; white-space: nowrap;
     }
     /* 日文原名：次要文字，单行截断 */
     .anime-card .title-jp {
@@ -124,14 +136,8 @@ HTML_TMPL = '''
     .anime-card .meta { margin-top: 14px; font-size: 17px; color: var(--text-secondary); line-height: 1.6; }
     .anime-card .meta .score { color: var(--accent); font-weight: 700; font-size: 22px; }
     .anime-card .meta .doing { color: var(--primary); font-weight: 700; }
-    /* 排名行：排名值用品牌蓝强调（官方 --brand_blue），未上榜时弱化灰 */
-    .anime-card .rank {
-      margin-top: 6px; font-size: 15px; color: var(--text-secondary); line-height: 1.6;
-    }
-    .anime-card .rank .rank-value { color: var(--primary); font-weight: 700; }
-    .anime-card .rank .rank-missing { color: var(--text-muted); font-weight: 400; }
 
-    /* 序号区（右栏）：88px 定宽，淡蓝底（官方 --Lb2）+ 左边框分隔，深蓝大号数字垂直居中 */
+    /* 序号区（右栏）：88px 定宽，淡蓝底（官方 --Lb2）+ 左边框分隔，白色大号数字垂直居中 */
     .anime-card .index-col {
       width: 88px; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
@@ -175,8 +181,13 @@ HTML_TMPL = '''
         <div class="cover-placeholder">无图</div>
         {% endif %}
         <div class="info">
-          <!-- or 优先级低于 |：必须整体加括号，否则 name_cn 不被转义 -->
-          <div class="title">{{ (a.name_cn or a.name) | e }}</div>
+          <div class="title-row">
+            <!-- or 优先级低于 |：必须整体加括号，否则 name_cn 不被转义 -->
+            <div class="title">{{ (a.name_cn or a.name) | e }}</div>
+            {% if a.rank %}
+            <span class="rank-badge">Rank {{ a.rank | e }}</span>
+            {% endif %}
+          </div>
           {% if a.name_cn and a.name and a.name_cn != a.name %}
           <div class="title-jp">{{ a.name | e }}</div>
           {% endif %}
@@ -184,14 +195,6 @@ HTML_TMPL = '''
             评分: <span class="score">{{ a.score | e }}</span>
             &nbsp;·&nbsp; 在看: <span class="doing">{{ a.doing | e }}</span>人
             &nbsp;·&nbsp; {{ a.air_date | e }}
-          </div>
-          <div class="rank">
-            Bangumi 排名:
-            {% if a.rank %}
-            <span class="rank-value">#{{ a.rank | e }}</span>
-            {% else %}
-            <span class="rank-value rank-missing">暂无排名</span>
-            {% endif %}
           </div>
           {% if a.tags %}
           <div class="tags">{% for t in a.tags %}<span class="tag">{{ t | e }}</span>{% endfor %}</div>

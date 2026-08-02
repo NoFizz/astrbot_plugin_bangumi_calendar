@@ -176,28 +176,30 @@ class TestContract:
         assert '<div class="index-num">2</div>' in html
 
     def test_renders_rank_value_when_present(self):
-        """Given rank 有值，When 渲染，Then 输出 #N 且不出现占位文案。"""
+        """Given rank 有值，When 渲染，Then 标题右侧输出 Rank N 蓝色胶囊。"""
         html = _render([_item(rank=9565)])
 
-        assert "#9565" in html
+        assert 'class="rank-badge"' in html
+        assert "Rank 9565" in html
         assert "暂无排名" not in html
 
     @pytest.mark.parametrize("rank", [None, 0])
-    def test_renders_no_rank_placeholder(self, rank):
-        """Given rank 缺失或为 0（未上榜），When 渲染，Then 显示「暂无排名」。"""
+    def test_omits_rank_badge_when_missing(self, rank):
+        """Given rank 缺失或为 0（未上榜），When 渲染，Then 不显示 rank 胶囊。"""
         html = _render([_item(rank=rank)])
 
-        assert "暂无排名" in html
+        assert 'class="rank-badge"' not in html
+        assert "Rank" not in html
 
     def test_three_column_structure(self):
         """Given 完整数据（有图/无图各一条），When 渲染，Then 封面/信息/序号区三栏齐全。"""
-        html = _render([_item(cover="data:image/jpeg;base64,AAAA"), _item(index=2)])
+        html = _render([_item(cover="data:image/jpeg;base64,AAAA", rank=42), _item(index=2)])
 
         assert 'class="cover"' in html  # 左栏：封面（有图时 img.cover）
         assert 'class="cover-placeholder"' in html  # 左栏：无图占位
         assert 'class="info"' in html  # 中栏：番剧信息
         assert 'class="index-col"' in html  # 右栏：今日序号区
-        assert "Bangumi 排名" in html  # 中栏含排名行
+        assert 'class="rank-badge"' in html  # 中栏标题右侧含 rank 胶囊
 
 
 class TestTagsRow:
@@ -244,14 +246,14 @@ class TestTagsRow:
 
 
 class TestIndexColumnBlue:
-    """序号区淡蓝改版：背景 --index-bg（官方 Lb2）、数字 --index-num 深蓝。"""
+    """序号区淡蓝底 + 白色数字：背景 --index-bg（官方 Lb2）、数字 --index-num 白色。"""
 
     def test_index_col_uses_light_blue_background(self):
-        """Given HTML_TMPL 源码，Then 序号区背景为淡蓝、数字为深蓝且变量已定义。"""
+        """Given HTML_TMPL 源码，Then 序号区背景为淡蓝、数字为白色且变量已定义。"""
         assert "background: var(--index-bg);" in HTML_TMPL
         assert "color: var(--index-num);" in HTML_TMPL
         assert "--index-bg: #BFEDFA;" in HTML_TMPL
-        assert "--index-num: #008AC5;" in HTML_TMPL
+        assert "--index-num: #FFFFFF;" in HTML_TMPL
 
     def test_index_col_keeps_88px_width_and_centered(self):
         """Given HTML_TMPL 源码，Then 序号区保留 88px 定宽与垂直居中布局。"""
