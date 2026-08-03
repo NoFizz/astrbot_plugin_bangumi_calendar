@@ -40,3 +40,6 @@ covers/
 # OS
 .DS_Store
 Thumbs.db
+
+# Tests (本地开发用，不上传)
+tests/
