@@ -8,7 +8,6 @@
   <img src="https://img.shields.io/badge/version-1.1.0-blue?style=flat" alt="version">
   <img src="https://img.shields.io/badge/license-AGPL--3.0-green?style=flat" alt="license">
   <img src="https://img.shields.io/badge/python-3.10+-blue?style=flat" alt="python">
-  <img src="https://img.shields.io/badge/AstrBot->=4.26.0-orange?style=flat" alt="AstrBot version">
 </p>
 
 <p align="center">每日定时推送 Bangumi 今日新番日历卡片图至群聊。</p>
