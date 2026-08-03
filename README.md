@@ -30,10 +30,10 @@
 - 支持配置 HTTP/SOCKS5 代理，兼容环境变量回退
 - 高清渲染（ultra 像素比），正文微软雅黑，作者署名
 
-## 截图 (Screenshots)
+## 推送卡片展示图
 
 <p align="center">
-  <img src="./docs/screenshots/card.png" width="480" alt="推送卡片示例">
+  <img src="./docs/screenshots/card.png" width="400" alt="推送卡片示例">
 </p>
 
 ## 安装
