@@ -65,10 +65,10 @@ HTML_TMPL = '''
       overflow-x: hidden;
     }
 
-    /* 头部：品牌粉淡色纯色胶囊（官方 --Pi4 #FF8CB0，无渐变），左右留白、全圆角、带投影，悬浮于灰底 */
+    /* 头部：品牌粉淡色纯色胶囊（官方 --Pi4 #FF8CB0，无渐变），左右尺寸与番剧卡片一致（24px），悬浮于灰底 */
     .header {
       position: relative; text-align: center;
-      margin: 16px 12px 0;
+      margin: 16px 24px 0;
       padding: 28px 24px 24px;
       background: #FF8CB0;
       border-radius: 24px;
