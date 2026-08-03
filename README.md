@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.1.0-blue?style=flat" alt="version">
+  <img src="https://img.shields.io/badge/version-1.2.0-blue?style=flat" alt="version">
   <img src="https://img.shields.io/badge/license-AGPL-3.0-green?style=flat" alt="license">
   <img src="https://img.shields.io/badge/python-3.10+-blue?style=flat" alt="python">
   <img src="https://img.shields.io/badge/AstrBot->=4.26.0-orange?style=flat" alt="AstrBot version">
@@ -20,16 +20,19 @@
 ## 功能特性
 
 - 每日定时向指定群聊推送今日新番日历卡片（PNG 图片）
-- 卡片包含：封面缩略图、中/日文名、评分、在看人数、首播日期
-- 默认按评分降序排列，支持自定义排序依据和方向
+- 卡片包含：封面缩略图、中/日文名、评分、Bangumi 全站排名（Rank 胶囊）、在看人数、首播日期、类型标签
+- 排序支持 **Rank 优先**（先按 Bangumi 排名高到低，未上榜按评分高到低）与在看人数，方向可配
+- 支持**评分下限 / 在看人数下限**过滤（可开关，双开时同时满足才显示）
+- 标签智能筛选：来源（漫画改/小说改等）→ 放送方式（TV/WEB/OVA 等）→ 题材，最多 5 个，按添加人数排序
 - 支持手动触发推送和即时查看今日新番
 - 推送时间、推送数量、排序方式可配置
 - 封面图本地缓存（30 天自动清理），减少重复下载
 - 支持配置 HTTP/SOCKS5 代理，兼容环境变量回退
+- 高清渲染（ultra 像素比），正文微软雅黑，作者署名
 
 ## 截图 (Screenshots)
 
-> 待补充：推送卡片效果图（由维护者提供）
+![推送卡片示例](./docs/screenshots/card.png)
 
 ## 安装
 
