@@ -1,7 +1,7 @@
-<h1 align="center">新番日推/astrbot_plugin_bangumi_calendar</h1>
+<h1 align="center">新番日推</h1>
 
 <p align="center">
-  <img src="logo.png" width="128" height="128" alt="astrbot_plugin_bangumi_calendar logo">
+  <img src="logo.png" width="128" height="128" alt="新番日推 logo">
 </p>
 
 <p align="center">
@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/AstrBot->=4.26.0-orange?style=flat" alt="AstrBot version">
 </p>
 
-每日定时推送 Bangumi 今日新番日历卡片图至群聊。
+<p align="center">每日定时推送 Bangumi 今日新番日历卡片图至群聊。</p>
 
 <p align="center">
   <img src="https://count.getloli.com/@astrbot_plugin_bangumi_calendar?theme=moebooru" alt="Moe Counter">
@@ -19,16 +19,11 @@
 
 ## 功能特性
 
-- 每日定时向指定群聊推送今日新番日历卡片（PNG 图片）
-- 卡片包含：封面缩略图、中/日文名、评分、Bangumi 全站排名（Rank 胶囊）、在看人数、首播日期、类型标签
-- 排序支持 **Rank 优先**（先按 Bangumi 排名高到低，未上榜按评分高到低）与在看人数，方向可配
-- 支持**评分下限 / 在看人数下限**过滤（可开关，双开时同时满足才显示）
-- 标签智能筛选：来源（漫画改/小说改等）→ 放送方式（TV/WEB/OVA 等）→ 题材，最多 5 个，按添加人数排序
-- 支持手动触发推送和即时查看今日新番
-- 推送时间、推送数量、排序方式可配置
-- 封面图本地缓存（30 天自动清理），减少重复下载
-- 支持配置 HTTP/SOCKS5 代理，兼容环境变量回退
-- 高清渲染（ultra 像素比），正文微软雅黑，作者署名
+- 每日定时向群聊推送今日新番日历卡片
+- 卡片展示封面、中/日文名、评分、全站排名、在看人数、首播日期和类型标签
+- 按排名优先或在看人数排序，可自定义排序方向
+- 可设置评分、在看人数下限，自动过滤不达标的番剧
+- 支持手动推送和随时查看今日新番
 
 ## 推送卡片展示图
 
