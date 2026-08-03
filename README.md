@@ -32,7 +32,9 @@
 
 ## 截图 (Screenshots)
 
-![推送卡片示例](./docs/screenshots/card.png)
+<p align="center">
+  <img src="./docs/screenshots/card.png" width="480" alt="推送卡片示例">
+</p>
 
 ## 安装
 
