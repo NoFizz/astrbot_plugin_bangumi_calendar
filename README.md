@@ -1,20 +1,42 @@
 <h1 align="center">新番日推</h1>
 
 <p align="center">
-  <img src="logo.png" width="128" height="128" alt="新番日推 logo">
+  <img src="./logo.png" width="128" height="128" alt="新番日推">
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-1.1.1-blue?style=flat" alt="version">
   <img src="https://img.shields.io/badge/license-AGPL--3.0-green?style=flat" alt="license">
   <img src="https://img.shields.io/badge/python-3.10+-blue?style=flat" alt="python">
+  <img src="https://img.shields.io/badge/AstrBot-%3E%3D4.17.0-orange?style=flat" alt="AstrBot version">
 </p>
 
-<p align="center">每日定时推送 Bangumi 今日新番日历卡片图至群聊。</p>
+<p align="center">每日新番放送日历，定时推送卡片图至群聊</p>
 
 <p align="center">
   <img src="https://count.getloli.com/@astrbot_plugin_bangumi_calendar?theme=moebooru" alt="Moe Counter">
 </p>
+
+## 功能简介
+
+新番日推 会在每天固定的时间自动整理当天更新的新番，生成一张好看的卡片图推送到群聊里。不用自己上网站查，打开群就能看到今天有哪些新番、评分如何、有多少人在追。
+
+## 内容列表
+
+- [功能简介](#功能简介)
+- [功能特性](#功能特性)
+- [推送卡片展示图](#推送卡片展示图)
+- [安装](#安装)
+- [配置说明](#配置说明)
+- [使用示例](#使用示例)
+- [依赖要求](#依赖要求)
+- [支持平台](#支持平台)
+- [数据存储与隐私](#数据存储与隐私)
+- [技术细节](#技术细节)
+- [FAQ / 故障排查](#faq--故障排查)
+- [维护者](#维护者)
+- [如何贡献](#如何贡献)
+- [许可证](#许可证)
 
 ## 功能特性
 
@@ -103,8 +125,12 @@
 ## 依赖要求
 
 - Python >= 3.10
-- AstrBot >= 4.26.0
+- AstrBot >= 4.17.0
 - httpx[socks]
+
+## 支持平台
+
+仅支持 **aiocqhttp**（OneBot QQ）。
 
 ## 数据存储与隐私
 
@@ -150,12 +176,14 @@
 
 以服务器本地时间为准，即代码中 `datetime.now()` 所在时区，不受客户端或用户时区影响。部署时请确认服务器时区设置正确。
 
-## 许可证
-
-本项目基于 [AGPL-3.0](LICENSE) 许可证开源。
-
-## 作者
+## 维护者
 
 **NoFizz** · [GitHub](https://github.com/NoFizz)
 
-如遇问题或有功能建议，欢迎提交 [Issue](https://github.com/NoFizz/astrbot_plugin_bangumi_calendar/issues)。
+## 如何贡献
+
+欢迎提交 [Issue](https://github.com/NoFizz/astrbot_plugin_bangumi_calendar/issues) 反馈问题或功能建议，也接受 [Pull Request](https://github.com/NoFizz/astrbot_plugin_bangumi_calendar/pulls)。
+
+## 许可证
+
+本项目基于 [AGPL-3.0](LICENSE) 许可证开源。
